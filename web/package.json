@@ -16,18 +16,26 @@
     "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "^7.7.0",
+    "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
     "cookie": "^1.1.1",
     "ioredis": "^5.10.1",
     "jose": "^6.2.2",
     "nanoid": "^5.1.9",
     "next": "14.2.35",
-    "prisma": "^7.7.0",
+    "prisma": "^6.19.3",
     "react": "^18",
     "react-dom": "^18",
     "tencentcloud-sdk-nodejs-sms": "^4.1.213",
     "zod": "^4.3.6"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma"
+    ]
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
