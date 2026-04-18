@@ -23,6 +23,7 @@ export class TencentSmsClient implements SmsClient {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async sendCode(phone: string, code: string, _purpose: SmsPurpose): Promise<void> {
     const appId = process.env.TENCENT_SMS_APP_ID;
     const sign = process.env.TENCENT_SMS_SIGN_NAME;
