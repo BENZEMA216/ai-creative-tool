@@ -254,3 +254,76 @@ describe('PUT /api/admin/users/:id/ban', () => {
     expect(updated!.status).toBe('active');
   });
 });
+
+import { GET as adminRecords } from '@/app/api/admin/records/route';
+import { GET as recordsExport } from '@/app/api/admin/records/export/route';
+
+async function makeRecord(userId: string, type: 'extract_text' | 'download_video', status: 'success' | 'failed') {
+  return testPrisma.usageRecord.create({
+    data: {
+      userId,
+      type,
+      videoUrl: 'https://x',
+      platform: 'youtube',
+      status,
+      pointsConsumed: status === 'success' ? 10 : 0,
+    },
+  });
+}
+
+describe('GET /api/admin/records', () => {
+  it('lists records with filters', async () => {
+    const token = await adminToken();
+    const u = await makeUser('AC50000001', 100);
+    await makeRecord(u.id, 'extract_text', 'success');
+    await makeRecord(u.id, 'download_video', 'failed');
+
+    const req = new Request('http://localhost/api/admin/records?page=1&page_size=10', {
+      headers: { cookie: `admin-token=${token}` },
+    });
+    const res = await adminRecords(req as any);
+    const json = await res.json();
+    expect(json.code).toBe(0);
+    expect(json.data.total).toBe(2);
+  });
+
+  it('filters by status=failed', async () => {
+    const token = await adminToken();
+    const u = await makeUser('AC50000002', 100);
+    await makeRecord(u.id, 'extract_text', 'success');
+    await makeRecord(u.id, 'extract_text', 'failed');
+    await makeRecord(u.id, 'extract_text', 'failed');
+
+    const req = new Request('http://localhost/api/admin/records?status=failed', {
+      headers: { cookie: `admin-token=${token}` },
+    });
+    const res = await adminRecords(req as any);
+    const json = await res.json();
+    expect(json.data.total).toBe(2);
+  });
+});
+
+describe('GET /api/admin/records/export', () => {
+  it('returns CSV with header row + records', async () => {
+    const token = await adminToken();
+    const u = await makeUser('AC60000001', 100);
+    await makeRecord(u.id, 'extract_text', 'success');
+
+    const req = new Request('http://localhost/api/admin/records/export', {
+      headers: { cookie: `admin-token=${token}` },
+    });
+    const res = await recordsExport(req as any);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('csv');
+    const text = await res.text();
+    expect(text).toContain('user_id,type,platform,status,points_consumed');
+    expect(text).toContain('AC60000001');
+    expect(text).toContain('extract_text');
+  });
+
+  it('requires admin auth', async () => {
+    const req = new Request('http://localhost/api/admin/records/export');
+    const res = await recordsExport(req as any);
+    expect(res.status).toBe(403);
+  });
+});

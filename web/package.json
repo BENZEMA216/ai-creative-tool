@@ -22,6 +22,7 @@
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "cookie": "^1.1.1",
+    "csv-stringify": "^6.7.0",
     "ioredis": "^5.10.1",
     "jose": "^6.2.2",
     "nanoid": "^5.1.9",
