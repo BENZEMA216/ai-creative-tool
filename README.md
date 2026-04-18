@@ -80,6 +80,12 @@ TEMP_DIR=/tmp/ai-creative \
 
 > `WHISPER_MODE=mock` 时返回固定文案；`openai` 需配 `OPENAI_API_KEY`。
 
+## 测试充值流程（mock 模式）
+
+1. 登录 → 顶部 Navbar 点「充值」
+2. 选择套餐 → 点「微信支付」→ 弹出二维码 + mock 提示
+3. **5 秒后自动模拟支付成功** → 关闭弹窗 → 顶部积分自动刷新
+
 ## 开发
 
 ### 技术栈
@@ -131,5 +137,5 @@ cd ../ytdlp-service
 
 - ✅ **Plan 1 (P0 + P1)**：骨架 + 认证 — 21 tasks
 - ✅ **Plan 2 (P2)**：视频解析 + 文案提取 + ffmpeg.wasm 裁剪 — 17 tasks
-- 🟡 **Plan 3 (P3)**：积分 + 微信支付 — 待写
+- ✅ **Plan 3 (P3)**：积分充值 + 微信支付 (mock) — 8 tasks
 - 🟡 **Plan 4 (P4 + P5)**：后台管理 + 测试加固 — 待写
