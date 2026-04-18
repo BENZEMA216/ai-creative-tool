@@ -134,3 +134,47 @@ describe('POST /api/auth/login', () => {
     expect(json.code).toBe(1003);
   });
 });
+
+import { GET as me } from '@/app/api/auth/me/route';
+import { POST as logout } from '@/app/api/auth/logout/route';
+import { signUserToken } from '@/lib/core/auth';
+
+describe('GET /api/auth/me', () => {
+  it('returns 401 without token', async () => {
+    const req = new Request('http://localhost/api/auth/me');
+    const res = await me(req as any);
+    expect(res.status).toBe(401);
+  });
+
+  it('returns user info with valid cookie token', async () => {
+    const user = await testPrisma.user.create({
+      data: { userId: 'AC11111111', phone: '13700137000', points: 50 },
+    });
+    const token = await signUserToken({ uid: user.id, userId: user.userId });
+    const req = new Request('http://localhost/api/auth/me', {
+      headers: { cookie: `auth-token=${token}` },
+    });
+    const res = await me(req as any);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data.user_id).toBe('AC11111111');
+    expect(json.data.points).toBe(50);
+  });
+
+  it('returns 401 for tampered token', async () => {
+    const req = new Request('http://localhost/api/auth/me', {
+      headers: { cookie: 'auth-token=invalid.token.here' },
+    });
+    const res = await me(req as any);
+    expect(res.status).toBe(401);
+  });
+});
+
+describe('POST /api/auth/logout', () => {
+  it('clears the cookie', async () => {
+    const req = new Request('http://localhost/api/auth/logout', { method: 'POST' });
+    const res = await logout(req as any);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('set-cookie')).toMatch(/auth-token=;.*Max-Age=0/);
+  });
+});
