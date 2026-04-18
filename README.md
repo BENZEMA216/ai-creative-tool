@@ -128,6 +128,17 @@ cd ../ytdlp-service
 | `WHISPER_MODE` | mock | `openai` + `OPENAI_API_KEY` |
 | `STORAGE` | local | `oss` + 填 OSS keys（P3） |
 
+## 测试后台管理
+
+1. 启动 web 服务后，控制台会打印随机生成的 admin 密码（如果 `.env` 没设 `ADMIN_INITIAL_PASSWORD`）
+2. 打开 http://localhost:3000/admin/login
+3. 用户名 `admin` + 控制台打印的密码
+4. 首次登录强制改密 → 跳转到用户管理
+5. 在用户管理页可：搜索用户 / 改积分 / 封禁解封
+6. 在使用记录页可：筛选 / 导出 CSV
+
+🎉 v1.0.0 完整商业化版骨架就绪。Mock 模式可立即体验；填入 微信支付 + 腾讯 SMS + OpenAI Whisper + 阿里云 OSS 凭证 即可切真实生产环境。
+
 ## 设计文档
 
 - Spec: `docs/superpowers/specs/2026-04-18-ai-creative-tool-design.md`
@@ -138,4 +149,4 @@ cd ../ytdlp-service
 - ✅ **Plan 1 (P0 + P1)**：骨架 + 认证 — 21 tasks
 - ✅ **Plan 2 (P2)**：视频解析 + 文案提取 + ffmpeg.wasm 裁剪 — 17 tasks
 - ✅ **Plan 3 (P3)**：积分充值 + 微信支付 (mock) — 8 tasks
-- 🟡 **Plan 4 (P4 + P5)**：后台管理 + 测试加固 — 待写
+- ✅ **Plan 4 (P4 + P5)**：后台管理 + 用户记录 — 10 tasks
