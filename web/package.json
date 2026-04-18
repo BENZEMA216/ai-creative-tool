@@ -28,6 +28,7 @@
     "next": "14.2.35",
     "openai": "^6.34.0",
     "prisma": "^6.19.3",
+    "qrcode.react": "^4.2.0",
     "react": "^18",
     "react-dom": "^18",
     "tencentcloud-sdk-nodejs-sms": "^4.1.213",
