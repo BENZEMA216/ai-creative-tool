@@ -1,23 +1,112 @@
 # AI 智能创作
 
-短视频文案提取 + 视频下载 Web 工具。
+短视频文案提取 + 视频下载 Web 工具。Next.js 14 + Postgres + Redis + Python FastAPI (yt-dlp) 微服务。
 
-## Quick Start
+> **当前进度**：P0 (骨架) + P1 (认证) 已完成。文案提取 / 视频下载 / 支付 / 后台管理将在 Plan 2-4 实现。
+
+## Quick Start (Docker — 推荐)
 
 ```bash
+git clone <repo>
+cd ai-creative-tool
+
+# 1. 复制环境变量（默认 mock 模式，无需真实 API key）
 cp .env.example .env
-docker compose up -d
+
+# 2. 启动所有服务
+docker compose up -d --build
+
+# 3. 等待 ~10 秒
+open http://localhost:3000
+```
+
+## Quick Start (Native — Docker 不可用时)
+
+适用于 macOS 没装 Docker 的开发场景。
+
+```bash
+# 1. 安装 + 启动 postgres + redis
+brew install postgresql@16 redis
+brew services start postgresql@16
+brew services start redis
+
+# 2. 创建数据库
+psql -d postgres -c "CREATE USER ai_creative WITH PASSWORD 'dev_only_password' CREATEDB;"
+psql -d postgres -c "CREATE DATABASE ai_creative OWNER ai_creative;"
+
+# 3. .env 用本地地址
+cp .env.example .env
+sed -i '' 's|@postgres:5432|@localhost:5432|; s|redis://redis:6379|redis://localhost:6379|; s|http://ytdlp:8000|http://localhost:8000|' .env
+
+# 4. 安装依赖 + 跑 migration
+cd web
+pnpm install
+DATABASE_URL="postgresql://ai_creative:dev_only_password@localhost:5432/ai_creative" \
+  pnpm prisma migrate deploy
+
+# 5. 启动 web
+pnpm dev
 ```
 
 打开 http://localhost:3000
 
-## Architecture
+## 测试登录流程
 
-见 `docs/superpowers/specs/2026-04-18-ai-creative-tool-design.md`
+1. 在登录页输入任意 11 位手机号（如 `13800138000`）
+2. 点击「获取验证码」
+3. **从控制台读取验证码**：
+   - Docker 路径：`docker compose logs --tail=20 web | grep "MOCK SMS"`
+   - Native 路径：直接看 `pnpm dev` 控制台输出（含 `[MOCK SMS] phone=... code=...`）
+4. 输入验证码 → 登录成功，跳转到 dashboard
+
+> 当 `MOCK_SMS=false` 并填入腾讯云凭证时，会走真实短信通道。
 
 ## 开发
 
-- `web/` — Next.js 14 前后端
-- `ytdlp-service/` — Python FastAPI 微服务
+### 技术栈
+- 前端 + 后端：Next.js 14 (App Router) + TypeScript + Tailwind
+- 数据库：PostgreSQL + Prisma 6
+- 缓存 / 限流：Redis (ioredis)
+- 视频处理：yt-dlp Python 微服务（FastAPI）+ ffmpeg.wasm 浏览器端（P2）
+- 认证：jose (JWT) + httpOnly cookie
+- 测试：vitest + supertest + playwright
 
-详见各子目录 README。
+### 目录
+- `web/` — Next.js 应用
+- `ytdlp-service/` — Python FastAPI 微服务（P0 仅 /health stub）
+- `docker-compose.yml` — 一键启动 4 个容器
+
+### 跑测试
+
+```bash
+cd web
+
+# 单元 + 集成测试（需要 postgres 在跑）
+DATABASE_URL="postgresql://ai_creative:dev_only_password@localhost:5432/ai_creative" pnpm test
+
+# E2E（自动启动 web dev server）
+pnpm test:e2e
+```
+
+### 切真实服务
+
+编辑 `.env`：
+
+| Var | 默认 | 切真实 |
+|---|---|---|
+| `MOCK_SMS` | true | 改 false + 填 `TENCENT_SMS_*` |
+| `MOCK_PAY` | true | 改 false + 填 `WECHAT_PAY_*`（P3） |
+| `WHISPER_MODE` | mock | `openai` 或 `local`（P2） |
+| `STORAGE` | local | `oss` + 填 OSS keys（P3） |
+
+## 设计文档
+
+- Spec: `docs/superpowers/specs/2026-04-18-ai-creative-tool-design.md`
+- Plans: `docs/superpowers/plans/2026-04-18-ai-creative-tool-*.md`
+
+## 已完成 Plan
+
+- ✅ **Plan 1 (P0 + P1)**：骨架 + 认证 — 21 tasks, all green
+- 🟡 **Plan 2 (P2)**：视频解析 + 文案提取 + 视频下载 — 待写
+- 🟡 **Plan 3 (P3)**：积分 + 微信支付 — 待写
+- 🟡 **Plan 4 (P4 + P5)**：后台管理 + 测试加固 — 待写
