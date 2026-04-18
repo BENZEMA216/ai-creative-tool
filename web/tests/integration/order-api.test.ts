@@ -5,6 +5,7 @@ vi.mock('@/lib/redis', () => ({ redis: new RedisMock() }));
 
 import { redis } from '@/lib/redis';
 import { POST as createOrder } from '@/app/api/order/create/route';
+import { GET as getStatus } from '@/app/api/order/status/[id]/route';
 import { testPrisma, resetDb } from '../helpers/test-db';
 import { signUserToken } from '@/lib/core/auth';
 
@@ -66,5 +67,58 @@ describe('POST /api/order/create', () => {
     });
     const res = await createOrder(req as any);
     expect(res.status).toBe(401);
+  });
+});
+
+async function makeOrder(userId: string, status: 'pending' | 'paid' | 'expired') {
+  return testPrisma.order.create({
+    data: {
+      orderNo: status === 'pending' ? 'AC20260418123456PEND' : status === 'paid' ? 'AC20260418123456PAID' : 'AC20260418123456EXPI',
+      userId,
+      packageType: 'standard',
+      amountYuan: 39.9,
+      points: 5000,
+      status,
+    },
+  });
+}
+
+describe('GET /api/order/status/:id', () => {
+  it('returns order status to its owner', async () => {
+    const { user, token } = await makeUserAndToken();
+    const order = await makeOrder(user.id, 'pending');
+    const req = new Request(`http://localhost/api/order/status/${order.orderNo}`, {
+      headers: { cookie: `auth-token=${token}` },
+    });
+    const res = await getStatus(req as any, { params: { id: order.orderNo } });
+    const json = await res.json();
+    expect(json.code).toBe(0);
+    expect(json.data.status).toBe('pending');
+    expect(json.data.order_no).toBe(order.orderNo);
+  });
+
+  it('returns 404 for unknown order', async () => {
+    const { token } = await makeUserAndToken();
+    const req = new Request('http://localhost/api/order/status/AC00000000000000XXXX', {
+      headers: { cookie: `auth-token=${token}` },
+    });
+    const res = await getStatus(req as any, { params: { id: 'AC00000000000000XXXX' } });
+    const json = await res.json();
+    expect(json.code).toBe(2020);
+  });
+
+  it('forbids access to other user orders', async () => {
+    const owner = await testPrisma.user.create({
+      data: { userId: 'AC22222222', phone: '13700137000', points: 0 },
+    });
+    const order = await makeOrder(owner.id, 'pending');
+
+    const { token } = await makeUserAndToken();
+    const req = new Request(`http://localhost/api/order/status/${order.orderNo}`, {
+      headers: { cookie: `auth-token=${token}` },
+    });
+    const res = await getStatus(req as any, { params: { id: order.orderNo } });
+    const json = await res.json();
+    expect(json.code).toBe(2020);
   });
 });
