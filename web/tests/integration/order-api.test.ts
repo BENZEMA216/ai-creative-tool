@@ -6,6 +6,7 @@ vi.mock('@/lib/redis', () => ({ redis: new RedisMock() }));
 import { redis } from '@/lib/redis';
 import { POST as createOrder } from '@/app/api/order/create/route';
 import { GET as getStatus } from '@/app/api/order/status/[id]/route';
+import { POST as wechatCallback } from '@/app/api/order/wechat-callback/route';
 import { testPrisma, resetDb } from '../helpers/test-db';
 import { signUserToken } from '@/lib/core/auth';
 
@@ -120,5 +121,87 @@ describe('GET /api/order/status/:id', () => {
     const res = await getStatus(req as any, { params: { id: order.orderNo } });
     const json = await res.json();
     expect(json.code).toBe(2020);
+  });
+});
+
+describe('POST /api/order/wechat-callback', () => {
+  it('marks order paid + adds points + records transaction (idempotent)', async () => {
+    const { user } = await makeUserAndToken();
+    const order = await testPrisma.order.create({
+      data: {
+        orderNo: 'AC20260418123456CALL',
+        userId: user.id,
+        packageType: 'standard',
+        amountYuan: 39.9,
+        points: 5000,
+        status: 'pending',
+      },
+    });
+
+    const req = new Request('http://localhost/api/order/wechat-callback', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ order_no: order.orderNo, success: true }),
+    });
+    const res = await wechatCallback(req as any);
+    expect(res.status).toBe(200);
+
+    const updated = await testPrisma.order.findUnique({ where: { id: order.id } });
+    expect(updated!.status).toBe('paid');
+    expect(updated!.paidAt).toBeTruthy();
+
+    const refreshed = await testPrisma.user.findUnique({ where: { id: user.id } });
+    expect(refreshed!.points).toBe(5000);
+
+    const tx = await testPrisma.pointTransaction.findFirst({ where: { userId: user.id } });
+    expect(tx!.amount).toBe(5000);
+    expect(tx!.type).toBe('recharge');
+    expect(tx!.relatedOrderId).toBe(order.orderNo);
+
+    // Idempotent: second callback doesn't double-add
+    const req2 = new Request('http://localhost/api/order/wechat-callback', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ order_no: order.orderNo, success: true }),
+    });
+    const res2 = await wechatCallback(req2 as any);
+    expect(res2.status).toBe(200);
+    const finalUser = await testPrisma.user.findUnique({ where: { id: user.id } });
+    expect(finalUser!.points).toBe(5000);
+  });
+
+  it('ignores callback for unknown order', async () => {
+    const req = new Request('http://localhost/api/order/wechat-callback', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ order_no: 'AC00000000000000XXXX', success: true }),
+    });
+    const res = await wechatCallback(req as any);
+    expect(res.status).toBe(200);
+  });
+
+  it('marks order failed if success=false', async () => {
+    const { user } = await makeUserAndToken();
+    const order = await testPrisma.order.create({
+      data: {
+        orderNo: 'AC20260418123456FAIL',
+        userId: user.id,
+        packageType: 'basic',
+        amountYuan: 19.9,
+        points: 2000,
+        status: 'pending',
+      },
+    });
+    const req = new Request('http://localhost/api/order/wechat-callback', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ order_no: order.orderNo, success: false }),
+    });
+    await wechatCallback(req as any);
+
+    const updated = await testPrisma.order.findUnique({ where: { id: order.id } });
+    expect(updated!.status).toBe('failed');
+    const u = await testPrisma.user.findUnique({ where: { id: user.id } });
+    expect(u!.points).toBe(0);
   });
 });
