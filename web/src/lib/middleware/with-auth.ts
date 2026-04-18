@@ -22,9 +22,9 @@ export async function getUserFromReq(req: Request): Promise<UserTokenPayload | n
 
 export async function withAuth(
   req: Request,
-  handler: (req: Request, user: UserTokenPayload) => Promise<NextResponse>
+  handler: (req: Request, user: UserTokenPayload) => Promise<NextResponse | Response>
 ): Promise<NextResponse> {
   const user = await getUserFromReq(req);
   if (!user) return err(ErrCode.Unauthorized, '请先登录');
-  return handler(req, user);
+  return handler(req, user) as Promise<NextResponse>;
 }
