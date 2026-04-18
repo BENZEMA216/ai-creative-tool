@@ -1,12 +1,12 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  content: ['./src/**/*.{ts,tsx}'],
+  content: ['./src/**/*.{ts,tsx,css,mdx}'],
   theme: {
     extend: {
       fontFamily: {
-        editorial: ['Fraunces', 'Georgia', 'serif'],
-        sans: ['"Inter Tight"', 'PingFang SC', 'sans-serif'],
+        editorial: ['var(--font-editorial)', 'Georgia', 'serif'],
+        sans: ['var(--font-sans)', 'PingFang SC', 'sans-serif'],
       },
       colors: {
         accent: '#c4b5fd',
