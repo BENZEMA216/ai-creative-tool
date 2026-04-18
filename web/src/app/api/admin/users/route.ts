@@ -7,8 +7,8 @@ function maskPhone(p: string): string {
 }
 
 export async function GET(req: Request) {
-  return withAdminAuth(req, async () => {
-    const url = new URL(req.url);
+  return withAdminAuth(req, async (request: Request) => {
+    const url = new URL(request.url);
     const page = Math.max(1, Number(url.searchParams.get('page') ?? '1'));
     const pageSize = Math.min(100, Math.max(1, Number(url.searchParams.get('page_size') ?? '20')));
     const q = url.searchParams.get('q')?.trim();

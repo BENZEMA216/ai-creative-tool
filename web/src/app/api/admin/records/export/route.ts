@@ -1,11 +1,12 @@
 import { stringify } from 'csv-stringify/sync';
+import { NextResponse } from 'next/server';
 import { withAdminAuth } from '@/lib/middleware/with-admin-auth';
 import { prisma } from '@/lib/db/prisma';
 import type { UsageType, UsageStatus } from '@prisma/client';
 
 export async function GET(req: Request) {
-  return withAdminAuth(req, async () => {
-    const url = new URL(req.url);
+  return withAdminAuth(req, async (request: Request) => {
+    const url = new URL(request.url);
     const type = url.searchParams.get('type') as UsageType | null;
     const status = url.searchParams.get('status') as UsageStatus | null;
     const platform = url.searchParams.get('platform')?.trim();
@@ -40,7 +41,7 @@ export async function GET(req: Request) {
     });
 
     const filename = `records-${new Date().toISOString().split('T')[0]}.csv`;
-    return new Response(csv, {
+    return new NextResponse(csv, {
       status: 200,
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
