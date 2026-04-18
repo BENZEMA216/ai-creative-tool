@@ -1,0 +1,44 @@
+# Node
+node_modules/
+.next/
+out/
+dist/
+*.log
+.npm/
+.pnpm-store/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Temp
+/tmp/
+*.tmp
+
+# Prisma generated
+web/src/generated/
