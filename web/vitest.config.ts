@@ -7,6 +7,7 @@ export default defineConfig({
     globals: true,
     include: ['tests/**/*.test.ts'],
     exclude: ['tests/e2e/**'],
+    fileParallelism: false,
     coverage: { provider: 'v8', reporter: ['text', 'lcov'] },
   },
   resolve: {

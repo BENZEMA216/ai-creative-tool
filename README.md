@@ -2,7 +2,7 @@
 
 短视频文案提取 + 视频下载 Web 工具。Next.js 14 + Postgres + Redis + Python FastAPI (yt-dlp) 微服务。
 
-> **当前进度**：P0 (骨架) + P1 (认证) 已完成。文案提取 / 视频下载 / 支付 / 后台管理将在 Plan 2-4 实现。
+> **当前进度**：P0 + P1 + P2 已完成。支付 + 后台管理将在 Plan 3-4 实现。
 
 ## Quick Start (Docker — 推荐)
 
@@ -26,7 +26,7 @@ open http://localhost:3000
 
 ```bash
 # 1. 安装 + 启动 postgres + redis
-brew install postgresql@16 redis
+brew install postgresql@16 redis ffmpeg
 brew services start postgresql@16
 brew services start redis
 
@@ -38,7 +38,7 @@ psql -d postgres -c "CREATE DATABASE ai_creative OWNER ai_creative;"
 cp .env.example .env
 sed -i '' 's|@postgres:5432|@localhost:5432|; s|redis://redis:6379|redis://localhost:6379|; s|http://ytdlp:8000|http://localhost:8000|' .env
 
-# 4. 安装依赖 + 跑 migration
+# 4. 安装 web 依赖 + 跑 migration
 cd web
 pnpm install
 DATABASE_URL="postgresql://ai_creative:dev_only_password@localhost:5432/ai_creative" \
@@ -46,6 +46,16 @@ DATABASE_URL="postgresql://ai_creative:dev_only_password@localhost:5432/ai_creat
 
 # 5. 启动 web
 pnpm dev
+```
+
+打开第二个终端启动 ytdlp-service：
+
+```bash
+cd /Users/benzema/code/ai-creative-tool/ytdlp-service
+uv sync
+INTERNAL_API_TOKEN=$(grep INTERNAL_API_TOKEN ../.env | cut -d= -f2) \
+TEMP_DIR=/tmp/ai-creative \
+  .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 打开 http://localhost:3000
@@ -61,31 +71,44 @@ pnpm dev
 
 > 当 `MOCK_SMS=false` 并填入腾讯云凭证时，会走真实短信通道。
 
+## 测试视频功能
+
+1. 登录后在 dashboard，dev 模式下可调用 `POST /api/dev/grant-points?amount=100` 获得 100 积分（生产禁用）
+2. 切换到「📝 文案提取」或「📥 视频下载」Tab
+3. 粘贴抖音/小红书/B站/YouTube 链接
+4. 点提取/解析按钮 → 等待 ytdlp-service 处理 → 看结果
+
+> `WHISPER_MODE=mock` 时返回固定文案；`openai` 需配 `OPENAI_API_KEY`。
+
 ## 开发
 
 ### 技术栈
 - 前端 + 后端：Next.js 14 (App Router) + TypeScript + Tailwind
 - 数据库：PostgreSQL + Prisma 6
 - 缓存 / 限流：Redis (ioredis)
-- 视频处理：yt-dlp Python 微服务（FastAPI）+ ffmpeg.wasm 浏览器端（P2）
+- 视频处理：yt-dlp Python 微服务（FastAPI）+ ffmpeg.wasm 浏览器端裁剪
+- 转写：OpenAI Whisper API（mock / openai / local 三模式）
 - 认证：jose (JWT) + httpOnly cookie
-- 测试：vitest + supertest + playwright
+- 测试：vitest + supertest + playwright + pytest
 
 ### 目录
 - `web/` — Next.js 应用
-- `ytdlp-service/` — Python FastAPI 微服务（P0 仅 /health stub）
+- `ytdlp-service/` — Python FastAPI 微服务
 - `docker-compose.yml` — 一键启动 4 个容器
 
 ### 跑测试
 
 ```bash
+# Web 单元 + 集成
 cd web
-
-# 单元 + 集成测试（需要 postgres 在跑）
 DATABASE_URL="postgresql://ai_creative:dev_only_password@localhost:5432/ai_creative" pnpm test
 
-# E2E（自动启动 web dev server）
+# Web E2E
 pnpm test:e2e
+
+# ytdlp-service 单元
+cd ../ytdlp-service
+.venv/bin/python -m pytest app/tests/ -v -m "not integration"
 ```
 
 ### 切真实服务
@@ -96,7 +119,7 @@ pnpm test:e2e
 |---|---|---|
 | `MOCK_SMS` | true | 改 false + 填 `TENCENT_SMS_*` |
 | `MOCK_PAY` | true | 改 false + 填 `WECHAT_PAY_*`（P3） |
-| `WHISPER_MODE` | mock | `openai` 或 `local`（P2） |
+| `WHISPER_MODE` | mock | `openai` + `OPENAI_API_KEY` |
 | `STORAGE` | local | `oss` + 填 OSS keys（P3） |
 
 ## 设计文档
@@ -106,7 +129,7 @@ pnpm test:e2e
 
 ## 已完成 Plan
 
-- ✅ **Plan 1 (P0 + P1)**：骨架 + 认证 — 21 tasks, all green
-- 🟡 **Plan 2 (P2)**：视频解析 + 文案提取 + 视频下载 — 待写
+- ✅ **Plan 1 (P0 + P1)**：骨架 + 认证 — 21 tasks
+- ✅ **Plan 2 (P2)**：视频解析 + 文案提取 + ffmpeg.wasm 裁剪 — 17 tasks
 - 🟡 **Plan 3 (P3)**：积分 + 微信支付 — 待写
 - 🟡 **Plan 4 (P4 + P5)**：后台管理 + 测试加固 — 待写
