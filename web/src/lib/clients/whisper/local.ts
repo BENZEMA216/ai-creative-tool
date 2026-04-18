@@ -2,6 +2,7 @@ import type { WhisperClient, TranscribeResult } from './interface';
 import { AppError, ErrCode } from '@/lib/core/errors';
 
 export class LocalWhisperClient implements WhisperClient {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async transcribe(_audioPath: string): Promise<TranscribeResult> {
     throw new AppError(
       ErrCode.WhisperFailed,
