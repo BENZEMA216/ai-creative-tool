@@ -16,6 +16,7 @@ vi.mock('@/lib/clients/ytdlp', () => ({
 
 import { redis } from '@/lib/redis';
 import { POST as extractText } from '@/app/api/video/extract-text/route';
+import { POST as parseVideo } from '@/app/api/video/parse/route';
 import { testPrisma, resetDb } from '../helpers/test-db';
 import { signUserToken } from '@/lib/core/auth';
 
@@ -124,5 +125,56 @@ describe('POST /api/video/extract-text', () => {
     });
     const res = await extractText(req as any);
     expect(res.status).toBe(401);
+  });
+});
+
+describe('POST /api/video/parse', () => {
+  it('parses + deducts 20 points + returns download_url', async () => {
+    const { user, token } = await makeUserAndToken(100);
+    mockParse.mockResolvedValue({
+      title: 'V', duration: 120, thumbnail: 'http://x/t.jpg',
+      download_token: 'fake-token', ext: 'mp4',
+    });
+
+    const req = new Request('http://localhost/api/video/parse', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie: `auth-token=${token}` },
+      body: JSON.stringify({ video_url: 'https://www.bilibili.com/video/BV1xx411c7mD' }),
+    });
+    const res = await parseVideo(req);
+    const json = await res.json();
+    expect(json.code).toBe(0);
+    expect(json.data.points_consumed).toBe(20);
+    expect(json.data.points_remaining).toBe(80);
+    expect(json.data.download_url).toContain('fake-token');
+    expect(json.data.platform).toBe('bilibili');
+
+    const refreshed = await testPrisma.user.findUnique({ where: { id: user.id } });
+    expect(refreshed!.points).toBe(80);
+  });
+
+  it('rejects unsupported platform', async () => {
+    const { token } = await makeUserAndToken(100);
+    const req = new Request('http://localhost/api/video/parse', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie: `auth-token=${token}` },
+      body: JSON.stringify({ video_url: 'https://example.com/vid' }),
+    });
+    const res = await parseVideo(req);
+    expect((await res.json()).code).toBe(2001);
+  });
+
+  it('does not deduct when ytdlp fails', async () => {
+    const { user, token } = await makeUserAndToken(100);
+    mockParse.mockRejectedValue(new Error('parse boom'));
+    const req = new Request('http://localhost/api/video/parse', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie: `auth-token=${token}` },
+      body: JSON.stringify({ video_url: 'https://www.youtube.com/watch?v=x' }),
+    });
+    const res = await parseVideo(req);
+    expect((await res.json()).code).not.toBe(0);
+    const refreshed = await testPrisma.user.findUnique({ where: { id: user.id } });
+    expect(refreshed!.points).toBe(100);
   });
 });
