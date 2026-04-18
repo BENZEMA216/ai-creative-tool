@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  active
+  banned
+}
+
+enum SmsPurpose {
+  login
+  register
+}
+
+enum PointTxnType {
+  recharge
+  consume
+  admin_adjust
+}
+
+enum PackageType {
+  basic
+  standard
+  premium
+}
+
+enum OrderStatus {
+  pending
+  paid
+  failed
+  refunded
+  expired
+}
+
+enum UsageType {
+  extract_text
+  download_video
+}
+
+enum UsageStatus {
+  success
+  failed
+}
+
+enum AdminRole {
+  admin
+  super_admin
+}
+
+model User {
+  id        String     @id @default(uuid()) @db.Uuid
+  userId    String     @unique @map("user_id") @db.VarChar(10)
+  phone     String     @unique @db.VarChar(20)
+  nickname  String     @default("创作者") @db.VarChar(50)
+  avatarUrl String?    @map("avatar_url") @db.VarChar(500)
+  points    Int        @default(0)
+  status    UserStatus @default(active)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  pointTxns    PointTransaction[]
+  orders       Order[]
+  usageRecords UsageRecord[]
+
+  @@map("users")
+}
+
+model SmsCode {
+  id        Int        @id @default(autoincrement())
+  phone     String     @db.VarChar(20)
+  code      String     @db.VarChar(6)
+  purpose   SmsPurpose
+  expiredAt DateTime   @map("expired_at")
+  used      Boolean    @default(false)
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@index([phone, purpose])
+  @@map("sms_codes")
+}
+
+model PointTransaction {
+  id             Int          @id @default(autoincrement())
+  userId         String       @map("user_id") @db.Uuid
+  type           PointTxnType
+  amount         Int
+  balanceAfter   Int          @map("balance_after")
+  description    String?      @db.VarChar(200)
+  relatedOrderId String?      @map("related_order_id") @db.VarChar(100)
+  createdAt      DateTime     @default(now()) @map("created_at")
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("point_transactions")
+}
+
+model Order {
+  id             String      @id @default(uuid()) @db.Uuid
+  orderNo        String      @unique @map("order_no") @db.VarChar(32)
+  userId         String      @map("user_id") @db.Uuid
+  packageType    PackageType @map("package_type")
+  amountYuan     Decimal     @map("amount_yuan") @db.Decimal(10, 2)
+  points         Int
+  status         OrderStatus @default(pending)
+  wechatPrepayId String?     @map("wechat_prepay_id") @db.VarChar(100)
+  paidAt         DateTime?   @map("paid_at")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  user           User        @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("orders")
+}
+
+model UsageRecord {
+  id             Int         @id @default(autoincrement())
+  userId         String      @map("user_id") @db.Uuid
+  type           UsageType
+  videoUrl       String      @map("video_url") @db.VarChar(1000)
+  platform       String      @db.VarChar(20)
+  status         UsageStatus
+  pointsConsumed Int         @default(0) @map("points_consumed")
+  resultText     String?     @map("result_text") @db.Text
+  resultFileUrl  String?     @map("result_file_url") @db.VarChar(500)
+  videoDuration  Int?        @map("video_duration")
+  errorMessage   String?     @map("error_message") @db.VarChar(500)
+  createdAt      DateTime    @default(now()) @map("created_at")
+  user           User        @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([type, status])
+  @@map("usage_records")
+}
+
+model AdminUser {
+  id                 Int       @id @default(autoincrement())
+  username           String    @unique @db.VarChar(50)
+  passwordHash       String    @map("password_hash") @db.VarChar(200)
+  role               AdminRole @default(admin)
+  mustChangePassword Boolean   @default(true) @map("must_change_password")
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  @@map("admin_users")
+}
