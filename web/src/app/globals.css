@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter+Tight:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-deep: #0b0d1f;
+  --bg-plum: #1f1233;
+  --accent: #c4b5fd;
+}
+
+html, body {
+  font-family: 'Inter Tight', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+h1, h2, .editorial {
+  font-family: 'Fraunces', Georgia, serif;
+  font-feature-settings: 'ss01';
+}
+
+.bg-gradient-page {
+  background: radial-gradient(ellipse at top left, var(--bg-plum) 0%, var(--bg-deep) 60%);
+  background-attachment: fixed;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
