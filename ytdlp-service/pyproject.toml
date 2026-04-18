@@ -1,15 +1,25 @@
 [project]
 name = "ytdlp-service"
-version = "0.1.0"
+version = "0.2.0"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.111",
     "uvicorn[standard]>=0.30",
     "pydantic>=2.7",
+    "yt-dlp>=2025.1.1",
+    "apscheduler>=3.10",
+    "httpx>=0.27",
 ]
 
 [tool.uv]
 dev-dependencies = [
     "pytest>=8",
+    "pytest-asyncio>=0.23",
     "httpx>=0.27",
 ]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests requiring real yt-dlp/network (deselect with '-m \"not integration\"')",
+]
+asyncio_mode = "auto"
