@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { parse as parseCookie } from 'cookie';
 import { verifyUserToken, type UserTokenPayload } from '@/lib/security/jwt';
 import { ErrCode } from '@/lib/domain/errors';
@@ -41,14 +40,3 @@ export function getAuthedUser(req: Request): UserTokenPayload {
   return u;
 }
 
-/**
- * 向后兼容老接口 withAuth(req, handler) — 保留以便渐进迁移
- */
-export async function withAuth(
-  req: Request,
-  handler: (req: Request, user: UserTokenPayload) => Promise<NextResponse | Response>
-): Promise<NextResponse> {
-  const user = await getUserFromReq(req);
-  if (!user) return err(ErrCode.Unauthorized, '请先登录');
-  return handler(req, user) as Promise<NextResponse>;
-}

@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { parse as parseCookie } from 'cookie';
 import { verifyAdminToken, type AdminTokenPayload } from '@/lib/security/jwt';
 import { ErrCode } from '@/lib/domain/errors';
@@ -41,14 +40,3 @@ export function getAuthedAdmin(req: Request): AdminTokenPayload {
   return a;
 }
 
-/**
- * 向后兼容老接口 withAdminAuth(req, handler) — 保留以便渐进迁移
- */
-export async function withAdminAuth(
-  req: Request,
-  handler: (req: Request, admin: AdminTokenPayload) => Promise<NextResponse>
-): Promise<NextResponse> {
-  const admin = await getAdminFromReq(req);
-  if (!admin) return err(ErrCode.AdminPermissionDenied, '请登录后台');
-  return handler(req, admin);
-}
