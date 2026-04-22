@@ -1,30 +1,18 @@
-import { withAuth } from '@/lib/middleware/with-auth';
-import { ok, err } from '@/lib/core/http';
-import { ErrCode } from '@/lib/core/errors';
-import { prisma } from '@/lib/db/prisma';
-import { ORDER_EXPIRY_MS } from '@/lib/core/orders';
+import { ok } from '@/lib/core/http';
+import { compose } from '@/lib/http/compose';
+import { withErrorBoundary } from '@/lib/http/error-boundary';
+import { requireAuth, getAuthedUser } from '@/lib/middleware/with-auth';
+import { getOrderStatus } from '@/lib/services/order-service';
+import type { Handler } from '@/lib/http/compose';
 
-export async function GET(req: Request, ctx: { params: { id: string } }) {
-  return withAuth(req, async (_, user) => {
-    const orderNo = ctx.params.id;
-    const order = await prisma.order.findUnique({ where: { orderNo } });
-    if (!order || order.userId !== user.uid) {
-      return err(ErrCode.OrderInvalid, '订单不存在或无权访问');
-    }
+const handler: Handler = async (req, ctx) => {
+  const user = getAuthedUser(req);
+  const orderNo = ctx?.params.id ?? '';
+  const result = await getOrderStatus(user.uid, orderNo);
+  return ok(result);
+};
 
-    let status = order.status;
-    if (status === 'pending' && order.createdAt.getTime() + ORDER_EXPIRY_MS < Date.now()) {
-      await prisma.order.update({ where: { id: order.id }, data: { status: 'expired' } }).catch(() => {});
-      status = 'expired';
-    }
-
-    return ok({
-      order_no: order.orderNo,
-      status,
-      amount: Number(order.amountYuan),
-      points: order.points,
-      paid_at: order.paidAt?.toISOString() ?? null,
-      created_at: order.createdAt.toISOString(),
-    });
-  });
-}
+export const GET = compose(
+  withErrorBoundary(),
+  requireAuth(),
+)(handler);
