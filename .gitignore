@@ -44,3 +44,11 @@ playwright/.cache/
 
 # Prisma generated
 web/src/generated/
+
+# Secrets / certificates
+certs/
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
