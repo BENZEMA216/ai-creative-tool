@@ -6,7 +6,8 @@ export default defineConfig({
   timeout: 180_000,
   reporter: [['list']],
   use: {
-    baseURL: 'http://43.160.242.46:3000',
+    // Override via env: SMOKE_BASE_URL=http://your-server:3000
+    baseURL: process.env.SMOKE_BASE_URL ?? 'http://localhost:3000',
     headless: true,
     trace: 'retain-on-failure',
     // Required for SharedArrayBuffer to be available in headless Chromium

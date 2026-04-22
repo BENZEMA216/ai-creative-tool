@@ -1,12 +1,14 @@
 /**
- * Real smoke tests — hit the LIVE server at 43.160.242.46:3000
- * Uses actual yt-dlp download + mock Whisper transcription.
+ * Real smoke tests — hit a live server with actual yt-dlp + mock Whisper.
  *
  * Run with:
- *   pnpm playwright test --config=playwright.real.config.ts --reporter=list
+ *   SMOKE_BASE_URL=http://your-server:3000 \
+ *     pnpm playwright test --config=playwright.real.config.ts --reporter=list
  *
- * Server: 2C/4G — yt-dlp + processing can take 15-60s.
- * yt-dlp may occasionally fail (YouTube bot detection); test failure is expected in that case.
+ * (falls back to http://localhost:3000 if SMOKE_BASE_URL not set)
+ *
+ * yt-dlp processing may take 15-60s. yt-dlp may occasionally fail
+ * on YouTube (bot detection); test failure is expected in that case.
  */
 import { test, expect } from '@playwright/test';
 
