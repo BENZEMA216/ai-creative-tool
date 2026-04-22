@@ -2,6 +2,20 @@
 
 当前 v1.0.1 是 **完整商业化版骨架**（全 mock 可跑，真服务凭证就绪即可切）。以下是剩余工作，按优先级排序。
 
+## ✅ 2026-04-22 已完成
+
+- 🔐 安全加固 5 项（commits c5b0634 ~ 2d63dd8）：
+  - 微信支付回调真验签（async verifyCallback）
+  - 删除 /api/dev/grant-points 后门
+  - ytdlp-service :8000 关闭外网
+  - /api/health 端点（DB + Redis 连通性）
+  - 删除 withAuth / withAdminAuth / checkUserRateLimit 老 compat shim
+- 🏗 结构提升 2 项（commits d88a52e / cdcc2ce）：
+  - 套餐改 DB 表（可后台改价/加套餐，配 /api/packages）
+  - AdminRole 真生效（`super_admin` 才能改积分/封禁，普通 admin 只读）
+
+---
+
 ## 🔴 P0 — 上线前必做
 
 ### 企业资质 + 备案（纯业务，代码不动）
@@ -48,9 +62,9 @@
   - [ ] 配 HSTS + gzip + 基本 rate limit
 - [ ] CSRF Token（当前只靠 SameSite=Lax cookie，生产建议加 double-submit token）
 - [ ] 生产 DB 密码 + JWT secret rotation 流程
-- [ ] 把 ytdlp-service 的 `:8000` 从 docker-compose `ports:` 里去掉（只走内网）
+- [x] 把 ytdlp-service 的 `:8000` 从 docker-compose `ports:` 里去掉（只走内网）
 - [ ] 关闭 dev 模式：`docker-compose.yml` 的 web service `target: dev` 改 `target: prod`
-- [ ] 移除 `/api/dev/grant-points` 路由（或加生产环境拒绝，已有 `NODE_ENV=production` 检查但确认一下）
+- [x] 移除 `/api/dev/grant-points` 路由（或加生产环境拒绝，已有 `NODE_ENV=production` 检查但确认一下）
 
 ---
 
@@ -62,9 +76,9 @@
 - [ ] **备份**
   - [ ] Postgres 每日备份（pg_dump + 异地）
   - [ ] 微信商户证书备份
-- [ ] **健康检查端点**
-  - [ ] `/api/health` 返回 DB + Redis 连通性
-  - [ ] 给 Docker healthcheck 用的内部 URL
+- [x] **健康检查端点**
+  - [x] `/api/health` 返回 DB + Redis 连通性
+  - [x] 给 Docker healthcheck 用的内部 URL
 - [ ] **日志**
   - [ ] 所有 API 请求日志（user_id / IP / 耗时 / 状态）
   - [ ] 敏感字段脱敏（phone / token）
@@ -101,7 +115,7 @@
 ### 后台
 - [ ] 后台 dashboard：DAU / 总消费积分 / 付费转化率图表
 - [ ] 管理员操作日志（谁什么时候改了哪个用户的积分）
-- [ ] 超管 vs 普通管理员权限区分（表已有 `role` 字段未启用）
+- [x] 超管 vs 普通管理员权限区分（表已有 `role` 字段未启用）— super_admin 已强制生效
 - [ ] 订单明细页（目前只在 orders 表，没有后台展示页）
 - [ ] 批量操作（批量封禁 / 批量加积分）
 
