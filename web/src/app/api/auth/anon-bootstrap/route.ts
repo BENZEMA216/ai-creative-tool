@@ -6,25 +6,31 @@ import { createAnonUser } from '@/lib/core/anon-user';
 const COOKIE_NAME = 'auth-token';
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
 
+// 用相对 Location，避免 docker 容器内 req.url 写成 localhost 把浏览器带偏
+function redirectRelative(pathname: string): NextResponse {
+  const res = new NextResponse(null, { status: 307 });
+  res.headers.set('Location', pathname);
+  return res;
+}
+
 export async function GET(req: NextRequest) {
-  // If already have a valid token pointing to an existing non-banned user, skip creation
   const existing = req.cookies.get(COOKIE_NAME)?.value;
   if (existing) {
     try {
       const payload = await verifyUserToken(existing);
       const user = await prisma.user.findUnique({ where: { id: payload.uid } });
       if (user && user.status !== 'banned') {
-        return NextResponse.redirect(new URL('/dashboard', req.url));
+        return redirectRelative('/dashboard');
       }
     } catch {
-      // fall through to create anon
+      // fall through
     }
   }
 
   const anon = await createAnonUser();
   const token = await signUserToken({ uid: anon.uid, userId: anon.userId });
 
-  const res = NextResponse.redirect(new URL('/dashboard', req.url));
+  const res = redirectRelative('/dashboard');
   res.cookies.set({
     name: COOKIE_NAME,
     value: token,
