@@ -35,8 +35,7 @@ services:
       TEMP_DIR: ${TEMP_DIR}
     volumes:
       - temp-files:/tmp/ai-creative
-    ports:
-      - "8000:8000"
+    # ports removed — ytdlp only accessible via docker network (security)
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
