@@ -10,7 +10,7 @@ const bodySchema = z.object({ banned: z.boolean() });
 
 export const PUT = compose(
   withErrorBoundary(),
-  requireAdmin(),
+  requireAdmin('super_admin'),
 )(async (req, ctx) => {
   const { banned } = await parseBody(req, bodySchema);
   const result = await setUserBan(ctx!.params.id, banned);

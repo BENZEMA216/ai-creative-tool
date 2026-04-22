@@ -12,13 +12,24 @@ beforeEach(async () => {
   await resetDb();
 });
 
-async function seedAdmin(password = 'admin123456', mustChangePassword = true) {
+async function seedAdmin(password = 'admin123456', mustChangePassword = true, role: 'admin' | 'super_admin' = 'super_admin') {
   return testPrisma.adminUser.create({
     data: {
       username: 'admin',
       passwordHash: await bcrypt.hash(password, 4),
       mustChangePassword,
-      role: 'super_admin',
+      role,
+    },
+  });
+}
+
+async function seedNamedAdmin(username: string, password = 'admin123456', mustChangePassword = false, role: 'admin' | 'super_admin' = 'super_admin') {
+  return testPrisma.adminUser.create({
+    data: {
+      username,
+      passwordHash: await bcrypt.hash(password, 4),
+      mustChangePassword,
+      role,
     },
   });
 }
@@ -325,5 +336,75 @@ describe('GET /api/admin/records/export', () => {
     const req = new Request('http://localhost/api/admin/records/export');
     const res = await recordsExport(req as any);
     expect(res.status).toBe(403);
+  });
+});
+
+describe('role enforcement', () => {
+  it('regular admin cannot adjust points', async () => {
+    const a = await seedNamedAdmin('regular_admin', 'x', false, 'admin');
+    const token = await signAdminToken({ aid: a.id, username: a.username, role: 'admin' });
+    const u = await testPrisma.user.create({
+      data: { userId: 'AC99999999', phone: '13999999999', points: 100 },
+    });
+
+    const req = new Request(`http://localhost/api/admin/users/${u.id}/points`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', cookie: `admin-token=${token}` },
+      body: JSON.stringify({ amount: 10, reason: 'test' }),
+    });
+    const res = await setPoints(req as any, { params: { id: u.id } });
+    const json = await res.json();
+    expect(json.code).toBe(1004);  // AdminPermissionDenied
+  });
+
+  it('regular admin cannot ban users', async () => {
+    const a = await seedNamedAdmin('regular_admin2', 'x', false, 'admin');
+    const token = await signAdminToken({ aid: a.id, username: a.username, role: 'admin' });
+    const u = await testPrisma.user.create({
+      data: { userId: 'AC99999998', phone: '13999999998', points: 0 },
+    });
+
+    const req = new Request(`http://localhost/api/admin/users/${u.id}/ban`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', cookie: `admin-token=${token}` },
+      body: JSON.stringify({ banned: true }),
+    });
+    const res = await banUser(req as any, { params: { id: u.id } });
+    const json = await res.json();
+    expect(json.code).toBe(1004);  // AdminPermissionDenied
+  });
+
+  it('super_admin can adjust points', async () => {
+    const a = await seedNamedAdmin('super_admin_role', 'x', false, 'super_admin');
+    const token = await signAdminToken({ aid: a.id, username: a.username, role: 'super_admin' });
+    const u = await testPrisma.user.create({
+      data: { userId: 'AC88888888', phone: '13888888888', points: 100 },
+    });
+    const req = new Request(`http://localhost/api/admin/users/${u.id}/points`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', cookie: `admin-token=${token}` },
+      body: JSON.stringify({ amount: 50, reason: 'test' }),
+    });
+    const res = await setPoints(req as any, { params: { id: u.id } });
+    const json = await res.json();
+    expect(json.code).toBe(0);
+    expect(json.data.balance_after).toBe(150);
+  });
+
+  it('super_admin can ban users', async () => {
+    const a = await seedNamedAdmin('super_admin_role2', 'x', false, 'super_admin');
+    const token = await signAdminToken({ aid: a.id, username: a.username, role: 'super_admin' });
+    const u = await testPrisma.user.create({
+      data: { userId: 'AC88888887', phone: '13888888887', points: 0 },
+    });
+    const req = new Request(`http://localhost/api/admin/users/${u.id}/ban`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', cookie: `admin-token=${token}` },
+      body: JSON.stringify({ banned: true }),
+    });
+    const res = await banUser(req as any, { params: { id: u.id } });
+    const json = await res.json();
+    expect(json.code).toBe(0);
+    expect(json.data.status).toBe('banned');
   });
 });

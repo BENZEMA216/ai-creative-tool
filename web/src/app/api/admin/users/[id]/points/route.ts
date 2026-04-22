@@ -13,7 +13,7 @@ const bodySchema = z.object({
 
 export const PUT = compose(
   withErrorBoundary(),
-  requireAdmin(),
+  requireAdmin('super_admin'),
 )(async (req, ctx) => {
   const { amount, reason } = await parseBody(req, bodySchema);
   const result = await adjustUserPoints(ctx!.params.id, amount, reason);

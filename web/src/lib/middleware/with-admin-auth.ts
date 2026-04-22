@@ -1,4 +1,5 @@
 import { parse as parseCookie } from 'cookie';
+import type { AdminRole } from '@prisma/client';
 import { verifyAdminToken, type AdminTokenPayload } from '@/lib/security/jwt';
 import { ErrCode } from '@/lib/domain/errors';
 import { err } from '@/lib/http/response';
@@ -20,12 +21,16 @@ export async function getAdminFromReq(req: Request): Promise<AdminTokenPayload |
 
 /**
  * 新接口（middleware factory）：
- *   export const POST = compose(requireAdmin())(async (req, ctx) => ...)
+ *   requireAdmin()              — any admin
+ *   requireAdmin('super_admin') — only super_admin (super_admin bypasses all)
  */
-export function requireAdmin(): Middleware {
+export function requireAdmin(minRole?: AdminRole): Middleware {
   return (handler: Handler): Handler => async (req, ctx) => {
     const admin = await getAdminFromReq(req);
     if (!admin) return err(ErrCode.AdminPermissionDenied, '请登录后台');
+    if (minRole && admin.role !== minRole && admin.role !== 'super_admin') {
+      return err(ErrCode.AdminPermissionDenied, `需要 ${minRole} 权限`);
+    }
     (req as Request & { __admin?: AdminTokenPayload }).__admin = admin;
     return handler(req, ctx);
   };
