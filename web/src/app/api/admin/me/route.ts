@@ -1,16 +1,14 @@
-import { withAdminAuth } from '@/lib/middleware/with-admin-auth';
-import { ok, err } from '@/lib/core/http';
-import { ErrCode } from '@/lib/core/errors';
-import { prisma } from '@/lib/db/prisma';
+import { ok } from '@/lib/core/http';
+import { compose } from '@/lib/http/compose';
+import { withErrorBoundary } from '@/lib/http/error-boundary';
+import { requireAdmin, getAuthedAdmin } from '@/lib/middleware/with-admin-auth';
+import { getAdminProfile } from '@/lib/services/admin-service';
 
-export async function GET(req: Request) {
-  return withAdminAuth(req, async (_, admin) => {
-    const a = await prisma.adminUser.findUnique({ where: { id: admin.aid } });
-    if (!a) return err(ErrCode.AdminPermissionDenied, 'admin not found');
-    return ok({
-      username: a.username,
-      role: a.role,
-      must_change_password: a.mustChangePassword,
-    });
-  });
-}
+export const GET = compose(
+  withErrorBoundary(),
+  requireAdmin(),
+)(async (req) => {
+  const admin = getAuthedAdmin(req);
+  const result = await getAdminProfile(admin.aid);
+  return ok(result);
+});
