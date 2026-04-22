@@ -85,8 +85,9 @@ export class WechatPayClient implements PayClient {
 
   constructor() {
     this.cfg = readConfig();
+    // SDK 用 CommonJS `module.exports = Pay`（无 .default）
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const WxPay = require('wechatpay-node-v3').default;
+    const WxPay = require('wechatpay-node-v3');
     this.pay = new WxPay({
       appid: this.cfg.appid,
       mchid: this.cfg.mchid,

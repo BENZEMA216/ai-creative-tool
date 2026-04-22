@@ -59,11 +59,29 @@ services:
       YTDLP_SERVICE_URL: ${YTDLP_SERVICE_URL}
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD}
+      # WeChat Pay V3 (MOCK_PAY=false 时才会读)
+      WECHAT_PAY_APP_ID: ${WECHAT_PAY_APP_ID}
+      WECHAT_PAY_MCH_ID: ${WECHAT_PAY_MCH_ID}
+      WECHAT_PAY_API_V3_KEY: ${WECHAT_PAY_API_V3_KEY}
+      WECHAT_PAY_SERIAL_NO: ${WECHAT_PAY_SERIAL_NO}
+      WECHAT_PAY_CERT_PATH: ${WECHAT_PAY_CERT_PATH}
+      WECHAT_PAY_KEY_PATH: ${WECHAT_PAY_KEY_PATH}
+      WECHAT_PAY_NOTIFY_URL: ${WECHAT_PAY_NOTIFY_URL}
+      # Tencent SMS (MOCK_SMS=false 时才会读)
+      TENCENT_SMS_SECRET_ID: ${TENCENT_SMS_SECRET_ID}
+      TENCENT_SMS_SECRET_KEY: ${TENCENT_SMS_SECRET_KEY}
+      TENCENT_SMS_APP_ID: ${TENCENT_SMS_APP_ID}
+      TENCENT_SMS_SIGN_NAME: ${TENCENT_SMS_SIGN_NAME}
+      TENCENT_SMS_TEMPLATE_ID: ${TENCENT_SMS_TEMPLATE_ID}
+      TENCENT_SMS_REGION: ${TENCENT_SMS_REGION}
+      # OpenAI (WHISPER_MODE=openai 时才会读)
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
     volumes:
       - ./web:/app
       - /app/node_modules
       - /app/.next
       - temp-files:/tmp/ai-creative
+      - ./certs:/certs:ro
     ports:
       - "3000:3000"
     depends_on:
