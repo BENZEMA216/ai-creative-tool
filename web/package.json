@@ -33,6 +33,7 @@
     "react": "^18",
     "react-dom": "^18",
     "tencentcloud-sdk-nodejs-sms": "^4.1.213",
+    "wechatpay-node-v3": "^2.2.1",
     "zod": "^4.3.6"
   },
   "pnpm": {
