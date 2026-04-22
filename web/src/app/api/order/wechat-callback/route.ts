@@ -1,4 +1,4 @@
-import { ok } from '@/lib/core/http';
+import { ok } from '@/lib/http/response';
 import { compose } from '@/lib/http/compose';
 import { withErrorBoundary } from '@/lib/http/error-boundary';
 import { handleWechatCallback } from '@/lib/services/order-service';

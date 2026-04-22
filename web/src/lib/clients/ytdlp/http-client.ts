@@ -1,4 +1,4 @@
-import { AppError, ErrCode } from '@/lib/core/errors';
+import { AppError, ErrCode } from '@/lib/domain/errors';
 
 export interface ExtractAudioResult {
   title: string;

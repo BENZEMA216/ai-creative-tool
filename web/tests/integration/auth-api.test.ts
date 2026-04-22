@@ -137,7 +137,7 @@ describe('POST /api/auth/login', () => {
 
 import { GET as me } from '@/app/api/auth/me/route';
 import { POST as logout } from '@/app/api/auth/logout/route';
-import { signUserToken } from '@/lib/core/auth';
+import { signUserToken } from '@/lib/security/jwt';
 
 describe('GET /api/auth/me', () => {
   it('returns 401 without token', async () => {

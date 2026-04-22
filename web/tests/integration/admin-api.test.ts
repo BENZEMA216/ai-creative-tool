@@ -4,7 +4,7 @@ import { testPrisma, resetDb } from '../helpers/test-db';
 import { POST as adminLogin } from '@/app/api/admin/login/route';
 import { POST as changePw } from '@/app/api/admin/change-password/route';
 import { GET as adminMe } from '@/app/api/admin/me/route';
-import { signAdminToken } from '@/lib/core/auth';
+import { signAdminToken } from '@/lib/security/jwt';
 
 beforeEach(async () => {
   process.env.JWT_SECRET = 'test-secret-min-32-chars-1234567890ab';

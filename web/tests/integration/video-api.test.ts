@@ -18,7 +18,7 @@ import { redis } from '@/lib/redis';
 import { POST as extractText } from '@/app/api/video/extract-text/route';
 import { POST as parseVideo } from '@/app/api/video/parse/route';
 import { testPrisma, resetDb } from '../helpers/test-db';
-import { signUserToken } from '@/lib/core/auth';
+import { signUserToken } from '@/lib/security/jwt';
 
 beforeEach(async () => {
   process.env.JWT_SECRET = 'test-secret-min-32-chars-1234567890ab';

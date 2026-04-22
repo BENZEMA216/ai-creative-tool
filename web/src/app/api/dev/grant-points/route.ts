@@ -1,7 +1,7 @@
 import { withAuth } from '@/lib/middleware/with-auth';
-import { addPoints } from '@/lib/core/points';
-import { ok, err } from '@/lib/core/http';
-import { ErrCode } from '@/lib/core/errors';
+import { addPoints } from '@/lib/services/points-service';
+import { ok, err } from '@/lib/http/response';
+import { ErrCode } from '@/lib/domain/errors';
 
 export async function POST(req: Request) {
   if (process.env.NODE_ENV === 'production') {

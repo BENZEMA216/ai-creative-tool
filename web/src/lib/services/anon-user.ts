@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import { prisma } from '@/lib/db/prisma';
-import { generateUserId } from './user-id';
+import { generateUserId } from '@/lib/util/user-id';
 
 const STARTER_POINTS = 100;
 

@@ -1,5 +1,5 @@
 import type { ZodType } from 'zod';
-import { AppError, ErrCode } from '@/lib/core/errors';
+import { AppError, ErrCode } from '@/lib/domain/errors';
 
 /**
  * 解析 JSON body 并用 zod schema 校验。失败抛 AppError 让 errorBoundary 捕获。

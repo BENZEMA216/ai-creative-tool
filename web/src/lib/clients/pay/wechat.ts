@@ -1,5 +1,5 @@
 import type { PayClient, CreateOrderInput, CreateOrderResult, VerifiedCallback } from './interface';
-import { AppError, ErrCode } from '@/lib/core/errors';
+import { AppError, ErrCode } from '@/lib/domain/errors';
 
 export class WechatPayClient implements PayClient {
   constructor() {

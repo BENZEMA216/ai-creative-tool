@@ -6,7 +6,7 @@ vi.mock('@/lib/redis', () => {
 });
 
 import { redis } from '@/lib/redis';
-import { rateLimit } from '@/lib/core/rate-limit';
+import { rateLimit } from '@/lib/infra/rate-limit';
 
 describe('rateLimit', () => {
   beforeEach(async () => {

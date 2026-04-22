@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { parse as parseCookie } from 'cookie';
-import { verifyUserToken, type UserTokenPayload } from '@/lib/core/auth';
-import { ErrCode } from '@/lib/core/errors';
-import { err } from '@/lib/core/http';
+import { verifyUserToken, type UserTokenPayload } from '@/lib/security/jwt';
+import { ErrCode } from '@/lib/domain/errors';
+import { err } from '@/lib/http/response';
 import type { Handler, Middleware } from '@/lib/http/compose';
 
 export async function getUserFromReq(req: Request): Promise<UserTokenPayload | null> {

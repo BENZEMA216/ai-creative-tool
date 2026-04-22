@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import bcrypt from 'bcryptjs';
 import { testPrisma, resetDb } from '../helpers/test-db';
-import { ensureAdminBootstrap } from '@/lib/core/admin-bootstrap';
+import { ensureAdminBootstrap } from '@/lib/services/admin-bootstrap';
 
 beforeEach(async () => {
   await resetDb();

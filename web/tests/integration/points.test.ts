@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { testPrisma, resetDb } from '../helpers/test-db';
-import { consumePoints, addPoints, adminAdjustPoints, PointsInsufficientError } from '@/lib/core/points';
+import { consumePoints, addPoints, adminAdjustPoints, PointsInsufficientError } from '@/lib/services/points-service';
 
 beforeEach(async () => {
   await resetDb();

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { verifyUserToken } from '@/lib/core/auth';
+import { verifyUserToken } from '@/lib/security/jwt';
 import { prisma } from '@/lib/db/prisma';
 import { Navbar } from '@/components/layout/Navbar';
 

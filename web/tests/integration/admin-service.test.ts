@@ -6,7 +6,7 @@ import {
   listUsers, adjustUserPoints, setUserBan,
   listUsageRecords, exportUsageRecordsCsv,
 } from '@/lib/services/admin-service';
-import { ErrCode } from '@/lib/core/errors';
+import { ErrCode } from '@/lib/domain/errors';
 
 beforeEach(async () => {
   process.env.JWT_SECRET = 'test-secret-min-32-chars-1234567890ab';

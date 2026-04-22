@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolvePlatform, type Platform } from '@/lib/core/platform';
+import { resolvePlatform, type Platform } from '@/lib/domain/platform';
 
 describe('resolvePlatform', () => {
   const cases: Array<[string, Platform | null]> = [

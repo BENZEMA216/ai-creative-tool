@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { testPrisma, resetDb } from '../helpers/test-db';
-import { signUserToken } from '@/lib/core/auth';
+import { signUserToken } from '@/lib/security/jwt';
 import { GET as historyList } from '@/app/api/history/list/route';
 
 beforeEach(async () => {

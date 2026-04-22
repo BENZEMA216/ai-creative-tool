@@ -1,5 +1,5 @@
-import { ErrCode, AppError } from '@/lib/core/errors';
-import { err } from '@/lib/core/http';
+import { ErrCode, AppError } from '@/lib/domain/errors';
+import { err } from '@/lib/http/response';
 import type { Handler, Middleware } from './compose';
 
 /**

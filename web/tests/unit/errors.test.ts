@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { ErrCode, AppError } from '@/lib/core/errors';
-import { ok, err } from '@/lib/core/http';
+import { ErrCode, AppError } from '@/lib/domain/errors';
+import { ok, err } from '@/lib/http/response';
 
 describe('AppError', () => {
   it('carries code and message', () => {

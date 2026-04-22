@@ -13,7 +13,7 @@ vi.mock('@/lib/clients/ytdlp', () => ({
 
 import { testPrisma, resetDb } from '../helpers/test-db';
 import { extractText, parseVideo } from '@/lib/services/video-service';
-import { AppError, ErrCode } from '@/lib/core/errors';
+import { AppError, ErrCode } from '@/lib/domain/errors';
 
 beforeEach(async () => {
   process.env.WHISPER_MODE = 'mock';

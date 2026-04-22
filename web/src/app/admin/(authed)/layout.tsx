@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { verifyAdminToken } from '@/lib/core/auth';
+import { verifyAdminToken } from '@/lib/security/jwt';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 
 export default async function AdminAuthedLayout({ children }: { children: React.ReactNode }) {

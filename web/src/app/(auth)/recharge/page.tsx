@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { verifyUserToken } from '@/lib/core/auth';
+import { verifyUserToken } from '@/lib/security/jwt';
 import { prisma } from '@/lib/db/prisma';
 import { RechargeUI } from './RechargeUI';
 

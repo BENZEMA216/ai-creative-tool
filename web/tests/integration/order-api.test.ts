@@ -8,7 +8,7 @@ import { POST as createOrder } from '@/app/api/order/create/route';
 import { GET as getStatus } from '@/app/api/order/status/[id]/route';
 import { POST as wechatCallback } from '@/app/api/order/wechat-callback/route';
 import { testPrisma, resetDb } from '../helpers/test-db';
-import { signUserToken } from '@/lib/core/auth';
+import { signUserToken } from '@/lib/security/jwt';
 
 beforeEach(async () => {
   process.env.JWT_SECRET = 'test-secret-min-32-chars-1234567890ab';

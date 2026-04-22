@@ -1,6 +1,6 @@
 import * as tencentcloud from 'tencentcloud-sdk-nodejs-sms';
 import type { SmsClient, SmsPurpose } from './interface';
-import { AppError, ErrCode } from '@/lib/core/errors';
+import { AppError, ErrCode } from '@/lib/domain/errors';
 
 const SmsClientSDK = tencentcloud.sms.v20210111.Client;
 

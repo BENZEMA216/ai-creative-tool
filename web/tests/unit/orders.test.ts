@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PACKAGES, getPackageInfo, isValidPackageType } from '@/lib/core/orders';
+import { PACKAGES, getPackageInfo, isValidPackageType } from '@/lib/domain/packages';
 
 describe('PACKAGES', () => {
   it('has basic / standard / premium with correct values', () => {

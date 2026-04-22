@@ -1,4 +1,4 @@
-import { ok } from '@/lib/core/http';
+import { ok } from '@/lib/http/response';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function POST(_req: Request) {

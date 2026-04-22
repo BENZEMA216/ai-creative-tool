@@ -4,7 +4,7 @@ beforeAll(() => {
   process.env.JWT_SECRET = 'test-secret-min-32-chars-1234567890ab';
 });
 
-import { signUserToken, verifyUserToken } from '@/lib/core/auth';
+import { signUserToken, verifyUserToken } from '@/lib/security/jwt';
 
 describe('JWT', () => {
   it('signs and verifies a token', async () => {

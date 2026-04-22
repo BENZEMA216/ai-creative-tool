@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ErrCode } from './errors';
+import { ErrCode } from '@/lib/domain/errors';
 
 export function ok<T>(data: T, message = 'success') {
   return NextResponse.json({ code: 0, message, data });

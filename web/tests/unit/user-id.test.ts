@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateUserId, isValidUserId } from '@/lib/core/user-id';
+import { generateUserId, isValidUserId } from '@/lib/util/user-id';
 
 describe('generateUserId', () => {
   it('returns AC + 8 digits', () => {

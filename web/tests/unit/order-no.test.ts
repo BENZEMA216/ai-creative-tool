@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateOrderNo, isValidOrderNo } from '@/lib/core/order-no';
+import { generateOrderNo, isValidOrderNo } from '@/lib/util/order-no';
 
 describe('generateOrderNo', () => {
   it('returns AC + 14 digits + 4 alnum', () => {

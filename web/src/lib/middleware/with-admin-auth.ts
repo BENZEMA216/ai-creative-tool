@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { parse as parseCookie } from 'cookie';
-import { verifyAdminToken, type AdminTokenPayload } from '@/lib/core/auth';
-import { ErrCode } from '@/lib/core/errors';
-import { err } from '@/lib/core/http';
+import { verifyAdminToken, type AdminTokenPayload } from '@/lib/security/jwt';
+import { ErrCode } from '@/lib/domain/errors';
+import { err } from '@/lib/http/response';
 import type { Handler, Middleware } from '@/lib/http/compose';
 
 export const ADMIN_COOKIE = 'admin-token';

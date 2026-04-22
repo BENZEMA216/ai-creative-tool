@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs';
-import { AppError, ErrCode } from '@/lib/core/errors';
-import { resolvePlatform, type Platform } from '@/lib/core/platform';
-import { consumePoints, recordFailedUsage, PointsInsufficientError } from '@/lib/core/points';
+import { AppError, ErrCode } from '@/lib/domain/errors';
+import { resolvePlatform, type Platform } from '@/lib/domain/platform';
+import { consumePoints, recordFailedUsage, PointsInsufficientError } from '@/lib/services/points-service';
 import { getYtdlpClient } from '@/lib/clients/ytdlp';
 import { getWhisperClient } from '@/lib/clients/whisper';
 import { prisma } from '@/lib/db/prisma';

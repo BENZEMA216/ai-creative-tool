@@ -1,10 +1,10 @@
 import { randomInt } from 'node:crypto';
-import { AppError, ErrCode } from '@/lib/core/errors';
+import { AppError, ErrCode } from '@/lib/domain/errors';
 import { prisma } from '@/lib/db/prisma';
-import { generateUserId } from '@/lib/core/user-id';
-import { signUserToken } from '@/lib/core/auth';
-import { createAnonUser } from '@/lib/core/anon-user';
-import { rateLimit } from '@/lib/core/rate-limit';
+import { generateUserId } from '@/lib/util/user-id';
+import { signUserToken } from '@/lib/security/jwt';
+import { createAnonUser } from '@/lib/services/anon-user';
+import { rateLimit } from '@/lib/infra/rate-limit';
 import { getSmsClient } from '@/lib/clients/sms';
 
 function maskPhone(p: string): string {

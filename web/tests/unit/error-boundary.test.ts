@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { NextResponse } from 'next/server';
 import { withErrorBoundary } from '@/lib/http/error-boundary';
-import { AppError, ErrCode } from '@/lib/core/errors';
+import { AppError, ErrCode } from '@/lib/domain/errors';
 
 describe('withErrorBoundary', () => {
   it('passes through successful response', async () => {

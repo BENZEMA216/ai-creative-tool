@@ -1,6 +1,6 @@
-import { rateLimit } from '@/lib/core/rate-limit';
-import { err } from '@/lib/core/http';
-import { ErrCode } from '@/lib/core/errors';
+import { rateLimit } from '@/lib/infra/rate-limit';
+import { err } from '@/lib/http/response';
+import { ErrCode } from '@/lib/domain/errors';
 import type { Handler, Middleware } from '@/lib/http/compose';
 import { getAuthedUser } from './with-auth';
 

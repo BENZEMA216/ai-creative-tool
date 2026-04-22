@@ -1,9 +1,9 @@
-import { AppError, ErrCode } from '@/lib/core/errors';
-import { generateOrderNo } from '@/lib/core/order-no';
-import { getPackageInfo, isValidPackageType, ORDER_EXPIRY_MS } from '@/lib/core/orders';
+import { AppError, ErrCode } from '@/lib/domain/errors';
+import { generateOrderNo } from '@/lib/util/order-no';
+import { getPackageInfo, isValidPackageType, ORDER_EXPIRY_MS } from '@/lib/domain/packages';
 import { prisma } from '@/lib/db/prisma';
 import { getPayClient } from '@/lib/clients/pay';
-import { addPoints } from '@/lib/core/points';
+import { addPoints } from '@/lib/services/points-service';
 import type { PackageType } from '@prisma/client';
 
 export interface CreateOrderResult {

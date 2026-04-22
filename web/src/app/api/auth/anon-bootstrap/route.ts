@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyUserToken, signUserToken } from '@/lib/core/auth';
+import { verifyUserToken, signUserToken } from '@/lib/security/jwt';
 import { prisma } from '@/lib/db/prisma';
-import { createAnonUser } from '@/lib/core/anon-user';
+import { createAnonUser } from '@/lib/services/anon-user';
 
 const COOKIE_NAME = 'auth-token';
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60;

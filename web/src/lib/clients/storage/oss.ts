@@ -1,5 +1,5 @@
 import type { StorageClient, StoredFile } from './interface';
-import { AppError, ErrCode } from '@/lib/core/errors';
+import { AppError, ErrCode } from '@/lib/domain/errors';
 
 export class OssStorageClient implements StorageClient {
   constructor() {

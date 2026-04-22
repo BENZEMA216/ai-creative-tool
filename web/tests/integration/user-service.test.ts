@@ -5,7 +5,7 @@ vi.mock('@/lib/redis', () => ({ redis: new RedisMock() }));
 import { redis } from '@/lib/redis';
 import { testPrisma, resetDb } from '../helpers/test-db';
 import { sendSmsCode, loginWithCode, getUserProfile, anonLogin } from '@/lib/services/user-service';
-import { ErrCode } from '@/lib/core/errors';
+import { ErrCode } from '@/lib/domain/errors';
 
 beforeEach(async () => {
   process.env.MOCK_SMS = 'true';

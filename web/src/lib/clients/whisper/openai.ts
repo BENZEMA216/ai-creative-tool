@@ -1,7 +1,7 @@
 import { createReadStream } from 'node:fs';
 import OpenAI from 'openai';
 import type { WhisperClient, TranscribeResult } from './interface';
-import { AppError, ErrCode } from '@/lib/core/errors';
+import { AppError, ErrCode } from '@/lib/domain/errors';
 
 export class OpenAIWhisperClient implements WhisperClient {
   private client: OpenAI;

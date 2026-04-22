@@ -1,5 +1,5 @@
 import { withAuth } from '@/lib/middleware/with-auth';
-import { ok } from '@/lib/core/http';
+import { ok } from '@/lib/http/response';
 import { prisma } from '@/lib/db/prisma';
 import type { UsageType, UsageStatus } from '@prisma/client';
 

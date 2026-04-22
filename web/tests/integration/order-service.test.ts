@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { testPrisma, resetDb } from '../helpers/test-db';
 import { createOrder, getOrderStatus, handleWechatCallback } from '@/lib/services/order-service';
-import { ErrCode } from '@/lib/core/errors';
+import { ErrCode } from '@/lib/domain/errors';
 
 beforeEach(async () => {
   process.env.MOCK_PAY = 'true';

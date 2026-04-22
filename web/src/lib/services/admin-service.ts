@@ -1,8 +1,8 @@
 import bcrypt from 'bcryptjs';
-import { AppError, ErrCode } from '@/lib/core/errors';
+import { AppError, ErrCode } from '@/lib/domain/errors';
 import { prisma } from '@/lib/db/prisma';
-import { signAdminToken } from '@/lib/core/auth';
-import { adminAdjustPoints } from '@/lib/core/points';
+import { signAdminToken } from '@/lib/security/jwt';
+import { adminAdjustPoints } from '@/lib/services/points-service';
 import type { AdminRole, UsageType, UsageStatus } from '@prisma/client';
 
 function maskPhone(p: string): string {
