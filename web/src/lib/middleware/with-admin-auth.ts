@@ -3,6 +3,7 @@ import { parse as parseCookie } from 'cookie';
 import { verifyAdminToken, type AdminTokenPayload } from '@/lib/core/auth';
 import { ErrCode } from '@/lib/core/errors';
 import { err } from '@/lib/core/http';
+import type { Handler, Middleware } from '@/lib/http/compose';
 
 export const ADMIN_COOKIE = 'admin-token';
 
@@ -18,6 +19,31 @@ export async function getAdminFromReq(req: Request): Promise<AdminTokenPayload |
   }
 }
 
+/**
+ * 新接口（middleware factory）：
+ *   export const POST = compose(requireAdmin())(async (req, ctx) => ...)
+ */
+export function requireAdmin(): Middleware {
+  return (handler: Handler): Handler => async (req, ctx) => {
+    const admin = await getAdminFromReq(req);
+    if (!admin) return err(ErrCode.AdminPermissionDenied, '请登录后台');
+    (req as Request & { __admin?: AdminTokenPayload }).__admin = admin;
+    return handler(req, ctx);
+  };
+}
+
+/**
+ * handler 内部读 admin。保证已经经过 requireAdmin()。
+ */
+export function getAuthedAdmin(req: Request): AdminTokenPayload {
+  const a = (req as Request & { __admin?: AdminTokenPayload }).__admin;
+  if (!a) throw new Error('getAuthedAdmin called on request not wrapped with requireAdmin()');
+  return a;
+}
+
+/**
+ * 向后兼容老接口 withAdminAuth(req, handler) — 保留以便渐进迁移
+ */
 export async function withAdminAuth(
   req: Request,
   handler: (req: Request, admin: AdminTokenPayload) => Promise<NextResponse>
