@@ -145,3 +145,18 @@ model AdminUser {
 
   @@map("admin_users")
 }
+
+model Package {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique @db.VarChar(50)
+  name      String   @db.VarChar(50)
+  yuan      Decimal  @db.Decimal(10, 2)
+  points    Int
+  badge     String?  @db.VarChar(100)
+  sortOrder Int      @default(0) @map("sort_order")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("packages")
+}

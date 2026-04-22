@@ -1,18 +1,48 @@
 import type { PackageType } from '@prisma/client';
+import { prisma } from '@/lib/db/prisma';
 
-export const PACKAGES = {
-  basic:    { yuan: 19.9, points: 2000 },
-  standard: { yuan: 39.9, points: 5000 },
-  premium:  { yuan: 99.9, points: 12000 },
-} as const;
+export { PackageType };
+
+export const ORDER_EXPIRY_MS = 15 * 60 * 1000;
 
 export function isValidPackageType(s: string): s is PackageType {
   return s === 'basic' || s === 'standard' || s === 'premium';
 }
 
-export function getPackageInfo(type: PackageType): { yuan: number; points: number } {
-  if (!isValidPackageType(type)) throw new Error(`unknown package type: ${type}`);
-  return PACKAGES[type];
+export interface PackagePrice {
+  yuan: number;
+  points: number;
+  name: string;
+  badge: string | null;
 }
 
-export const ORDER_EXPIRY_MS = 15 * 60 * 1000;
+/**
+ * Look up package price from DB. Throws if not active / not found.
+ */
+export async function getPackageInfo(type: PackageType): Promise<PackagePrice> {
+  const p = await prisma.package.findUnique({ where: { code: type } });
+  if (!p || !p.active) throw new Error(`unknown or inactive package: ${type}`);
+  return {
+    yuan: Number(p.yuan),
+    points: p.points,
+    name: p.name,
+    badge: p.badge,
+  };
+}
+
+/**
+ * List all active packages, sorted.
+ */
+export async function listActivePackages(): Promise<Array<PackagePrice & { code: PackageType }>> {
+  const list = await prisma.package.findMany({
+    where: { active: true },
+    orderBy: { sortOrder: 'asc' },
+  });
+  return list.map(p => ({
+    code: p.code as PackageType,
+    yuan: Number(p.yuan),
+    points: p.points,
+    name: p.name,
+    badge: p.badge,
+  }));
+}

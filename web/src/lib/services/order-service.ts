@@ -30,7 +30,7 @@ export async function createOrder(userId: string, packageType: string): Promise<
   if (!isValidPackageType(packageType)) {
     throw new AppError(ErrCode.InternalError, '无效套餐类型');
   }
-  const pkg = getPackageInfo(packageType as PackageType);
+  const pkg = await getPackageInfo(packageType as PackageType);
 
   const orderNo = generateOrderNo();
 

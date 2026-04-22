@@ -1,16 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { PackageCard } from '@/components/features/PackageCard';
 import { PaymentModal } from '@/components/features/PaymentModal';
 
-const PACKAGES = [
-  { type: 'basic', yuan: 19.9, points: 2000 },
-  { type: 'standard', yuan: 39.9, points: 5000, badge: '多送 25%' },
-  { type: 'premium', yuan: 99.9, points: 12000, badge: '多送 20%' },
-] as const;
+interface PackageInfo {
+  code: 'basic' | 'standard' | 'premium';
+  name: string;
+  yuan: number;
+  points: number;
+  badge: string | null;
+}
 
 interface Order {
   order_no: string;
@@ -22,10 +24,17 @@ interface Order {
 
 export function RechargeUI({ initialPoints }: { initialPoints: number }) {
   const router = useRouter();
+  const [packages, setPackages] = useState<PackageInfo[]>([]);
   const [selected, setSelected] = useState<'basic' | 'standard' | 'premium'>('standard');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [order, setOrder] = useState<Order | null>(null);
+
+  useEffect(() => {
+    fetch('/api/packages').then(r => r.json()).then(json => {
+      if (json.code === 0) setPackages(json.data.packages);
+    });
+  }, []);
 
   async function checkout() {
     setError(null);
@@ -51,15 +60,15 @@ export function RechargeUI({ initialPoints }: { initialPoints: number }) {
     <div className="space-y-6">
       <div className="text-sm text-white/70">当前积分：🪙 {initialPoints.toLocaleString()}</div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {PACKAGES.map(p => (
+        {packages.map(p => (
           <PackageCard
-            key={p.type}
-            type={p.type}
+            key={p.code}
+            type={p.code}
             yuan={p.yuan}
             points={p.points}
-            badge={(p as { badge?: string }).badge}
-            selected={selected === p.type}
-            onClick={() => setSelected(p.type)}
+            badge={p.badge ?? undefined}
+            selected={selected === p.code}
+            onClick={() => setSelected(p.code)}
           />
         ))}
       </div>
