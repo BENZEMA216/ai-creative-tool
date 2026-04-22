@@ -17,7 +17,7 @@ describe('MockPayClient', () => {
   it('verifyCallback returns success for any well-formed body', async () => {
     const { MockPayClient } = await import('@/lib/clients/pay/mock');
     const client = new MockPayClient();
-    const r = client.verifyCallback({}, { order_no: 'AC20260418123456ABCD', success: true });
+    const r = await client.verifyCallback({}, { order_no: 'AC20260418123456ABCD', success: true });
     expect(r.orderNo).toBe('AC20260418123456ABCD');
     expect(r.success).toBe(true);
   });

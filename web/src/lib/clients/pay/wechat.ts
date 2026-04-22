@@ -126,55 +126,42 @@ export class WechatPayClient implements PayClient {
     }
   }
 
-  /**
-   * 验签 + 解密微信回调。
-   * 注意：SDK verifySign 是异步的，但接口定义为同步。
-   * 实际部署中建议在路由层 await 此方法，或将接口改为 async。
-   * 此处以 Promise.resolve 包装，兼容调用方 await。
-   */
-  verifyCallback(
-    headers: Record<string, string | undefined>,
-    body: unknown
-  ): VerifiedCallback {
-    // 微信回调 body 结构：
-    // { id, create_time, resource_type, event_type, summary,
-    //   resource: { ciphertext, nonce, associated_data } }
+  async verifyCallback(headers: Record<string, string | undefined>, body: unknown): Promise<VerifiedCallback> {
     const eventType = (body as { event_type?: string })?.event_type;
-    const resource = (
-      body as {
-        resource?: { ciphertext: string; nonce: string; associated_data: string };
-      }
-    )?.resource;
+    const resource = (body as { resource?: { ciphertext: string; nonce: string; associated_data: string } })?.resource;
 
     if (!resource) {
       throw new AppError(ErrCode.WechatPayCreateFailed, '回调 body 缺少 resource');
     }
 
-    const timestamp = headers['wechatpay-timestamp'];
-    const nonce = headers['wechatpay-nonce'];
-    const serial = headers['wechatpay-serial'];
-    const signature = headers['wechatpay-signature'];
+    try {
+      // 真验签（await — SDK returns Promise<boolean>）
+      const verified = await (this.pay as { verifySign: (p: unknown) => Promise<boolean> }).verifySign({
+        timestamp: headers['wechatpay-timestamp'],
+        nonce: headers['wechatpay-nonce'],
+        body: JSON.stringify(body),
+        serial: headers['wechatpay-serial'],
+        signature: headers['wechatpay-signature'],
+      });
+      if (!verified) throw new AppError(ErrCode.WechatPayCreateFailed, '回调签名验证失败');
 
-    if (!timestamp || !nonce || !serial || !signature) {
-      throw new AppError(ErrCode.WechatPayCreateFailed, '回调缺少必要的微信签名头');
+      // 解密 resource.ciphertext
+      const decrypted = (this.pay as { decipher_gcm: <T>(ct: string, ad: string, n: string, k: string) => T }).decipher_gcm<{
+        out_trade_no: string;
+        trade_state: string;
+      }>(resource.ciphertext, resource.associated_data, resource.nonce, this.cfg.apiV3Key);
+
+      const success =
+        (eventType === 'TRANSACTION.SUCCESS' || decrypted.trade_state === 'SUCCESS');
+
+      return {
+        orderNo: decrypted.out_trade_no,
+        success,
+      };
+    } catch (e) {
+      if (e instanceof AppError) throw e;
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new AppError(ErrCode.WechatPayCreateFailed, `回调处理失败: ${msg}`);
     }
-
-    // verifySign 是 async，但 PayClient 接口是 sync。
-    // 在路由层应 await 此方法（TypeScript 允许 async 子类实现 sync 接口）。
-    // 此处使用同步方式调用，verifySign 内部会做异步平台证书拉取；
-    // 如需严格 async 验签，请将 PayClient.verifyCallback 改为 Promise<VerifiedCallback>。
-    // 实用折衷：直接解密 resource，签名验证交由上游（Nginx + 微信 IP 白名单）。
-    const decrypted = this.pay.decipher_gcm<{
-      out_trade_no: string;
-      trade_state: string;
-    }>(resource.ciphertext, resource.associated_data, resource.nonce, this.cfg.apiV3Key);
-
-    const success =
-      eventType === 'TRANSACTION.SUCCESS' || decrypted.trade_state === 'SUCCESS';
-
-    return {
-      orderNo: decrypted.out_trade_no,
-      success,
-    };
   }
 }

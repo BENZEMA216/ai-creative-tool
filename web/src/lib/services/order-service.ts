@@ -112,7 +112,7 @@ export interface CallbackInput {
 export async function handleWechatCallback(input: CallbackInput): Promise<void> {
   let verified;
   try {
-    verified = getPayClient().verifyCallback(input.headers, input.body);
+    verified = await getPayClient().verifyCallback(input.headers, input.body);
   } catch {
     return;  // 验签失败不再处理，但外层仍返回 200
   }

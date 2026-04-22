@@ -17,7 +17,7 @@ export class MockPayClient implements PayClient {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  verifyCallback(_headers: Record<string, string | undefined>, body: unknown): VerifiedCallback {
+  async verifyCallback(_headers: Record<string, string | undefined>, body: unknown): Promise<VerifiedCallback> {
     const b = (body ?? {}) as { order_no?: string; success?: boolean };
     return { orderNo: b.order_no ?? '', success: b.success ?? false };
   }

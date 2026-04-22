@@ -17,5 +17,5 @@ export interface VerifiedCallback {
 
 export interface PayClient {
   createNativeOrder(input: CreateOrderInput): Promise<CreateOrderResult>;
-  verifyCallback(headers: Record<string, string | undefined>, body: unknown): VerifiedCallback;
+  verifyCallback(headers: Record<string, string | undefined>, body: unknown): Promise<VerifiedCallback>;
 }
