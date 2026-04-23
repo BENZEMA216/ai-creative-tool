@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { testPrisma, resetDb } from '../helpers/test-db';
 import { createOrder, getOrderStatus, handleWechatCallback } from '@/lib/services/order-service';
 import { ErrCode } from '@/lib/domain/errors';
@@ -146,5 +146,88 @@ describe('OrderService.handleWechatCallback', () => {
       headers: {},
       body: { order_no: 'AC00000000000000NOPE', success: true },
     })).resolves.toBeUndefined();
+  });
+});
+
+describe('OrderService.getOrderStatus — WeChat polling', () => {
+  const mockQuery = vi.fn();
+
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('syncs pending order to paid when WeChat query returns SUCCESS', async () => {
+    // Spy on getPayClient to inject a mock with custom queryOrder
+    const { getPayClient } = await import('@/lib/clients/pay');
+    const orig = getPayClient();
+    // Monkeypatch the queryOrder method on the mock client for this test
+    (orig as unknown as { queryOrder: typeof mockQuery }).queryOrder = mockQuery;
+    mockQuery.mockResolvedValue({ paid: true, trade_state: 'SUCCESS' });
+
+    const u = await makeUser();
+    const order = await testPrisma.order.create({
+      data: {
+        orderNo: 'AC20260423000000POLL', userId: u.id,
+        packageType: 'basic', amountYuan: 19.9, points: 2000, status: 'pending',
+      },
+    });
+
+    const result = await getOrderStatus(u.id, order.orderNo);
+    expect(result.status).toBe('paid');
+
+    const updated = await testPrisma.order.findUnique({ where: { id: order.id } });
+    expect(updated!.status).toBe('paid');
+    expect(updated!.paidAt).toBeTruthy();
+
+    const refreshed = await testPrisma.user.findUnique({ where: { id: u.id } });
+    expect(refreshed!.points).toBe(2000);
+
+    const tx = await testPrisma.pointTransaction.findFirst({ where: { userId: u.id } });
+    expect(tx!.type).toBe('recharge');
+    expect(tx!.amount).toBe(2000);
+  });
+
+  it('leaves pending when WeChat says NOTPAY', async () => {
+    const { getPayClient } = await import('@/lib/clients/pay');
+    const orig = getPayClient();
+    (orig as unknown as { queryOrder: typeof mockQuery }).queryOrder = mockQuery;
+    mockQuery.mockResolvedValue({ paid: false, trade_state: 'NOTPAY' });
+
+    const u = await testPrisma.user.create({
+      data: { userId: 'AC44444444', phone: '13444444444', points: 0 },
+    });
+    const order = await testPrisma.order.create({
+      data: {
+        orderNo: 'AC20260423000000POL2', userId: u.id,
+        packageType: 'basic', amountYuan: 19.9, points: 2000, status: 'pending',
+      },
+    });
+
+    const result = await getOrderStatus(u.id, order.orderNo);
+    expect(result.status).toBe('pending');
+
+    const refreshed = await testPrisma.user.findUnique({ where: { id: u.id } });
+    expect(refreshed!.points).toBe(0);
+  });
+
+  it('tolerates query errors (silent)', async () => {
+    const { getPayClient } = await import('@/lib/clients/pay');
+    const orig = getPayClient();
+    (orig as unknown as { queryOrder: typeof mockQuery }).queryOrder = mockQuery;
+    mockQuery.mockRejectedValue(new Error('network error'));
+
+    const u = await testPrisma.user.create({
+      data: { userId: 'AC55555555', phone: '13555555555', points: 0 },
+    });
+    const order = await testPrisma.order.create({
+      data: {
+        orderNo: 'AC20260423000000POL3', userId: u.id,
+        packageType: 'basic', amountYuan: 19.9, points: 2000, status: 'pending',
+      },
+    });
+
+    // Should not throw; returns pending
+    const result = await getOrderStatus(u.id, order.orderNo);
+    expect(result.status).toBe('pending');
   });
 });

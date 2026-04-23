@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { AppError, ErrCode } from '@/lib/domain/errors';
-import type { PayClient, CreateOrderInput, CreateOrderResult, VerifiedCallback } from './interface';
+import type { PayClient, CreateOrderInput, CreateOrderResult, VerifiedCallback, QueryOrderResult } from './interface';
 
 interface WechatConfig {
   appid: string;
@@ -65,6 +65,11 @@ type WxPayInstance = {
     apiSecret?: string;
   }): Promise<boolean>;
   decipher_gcm<T>(ciphertext: string, associated_data: string, nonce: string, key?: string): T;
+  query(params: { out_trade_no: string }): Promise<{
+    status: number;
+    data?: { trade_state?: string; out_trade_no?: string };
+    error?: unknown;
+  }>;
 };
 
 /**
@@ -163,6 +168,22 @@ export class WechatPayClient implements PayClient {
       if (e instanceof AppError) throw e;
       const msg = e instanceof Error ? e.message : String(e);
       throw new AppError(ErrCode.WechatPayCreateFailed, `回调处理失败: ${msg}`);
+    }
+  }
+
+  async queryOrder(orderNo: string): Promise<QueryOrderResult> {
+    try {
+      const result = await this.pay.query({ out_trade_no: orderNo });
+      const tradeState = result.data?.trade_state;
+      return {
+        paid: tradeState === 'SUCCESS',
+        trade_state: tradeState,
+      };
+    } catch (e) {
+      // Don't throw — polling should be tolerant of transient errors
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn(`[WechatPay] queryOrder(${orderNo}) failed: ${msg}`);
+      return { paid: false };
     }
   }
 }

@@ -78,6 +78,7 @@ export async function createOrder(userId: string, packageType: string): Promise<
 
 /**
  * 查单状态 + 自动 expired 迁移（pending + 过期 → expired）。
+ * 如仍 pending，主动向微信查询（轮询模式：绕过 notify_url HTTPS 要求）。
  */
 export async function getOrderStatus(userId: string, orderNo: string): Promise<OrderStatusResult> {
   const order = await prisma.order.findUnique({ where: { orderNo } });
@@ -86,17 +87,51 @@ export async function getOrderStatus(userId: string, orderNo: string): Promise<O
   }
 
   let status = order.status;
+
+  // Auto-expire old pending orders
   if (status === 'pending' && order.createdAt.getTime() + ORDER_EXPIRY_MS < Date.now()) {
     await prisma.order.update({ where: { id: order.id }, data: { status: 'expired' } }).catch(() => {});
     status = 'expired';
   }
+
+  // If still pending (and not expired), ask WeChat actively.
+  // This bypasses the callback requirement when notify_url isn't reachable.
+  if (status === 'pending') {
+    try {
+      const result = await getPayClient().queryOrder(orderNo);
+      if (result.paid) {
+        // Same state transition as wechat-callback: pending → paid (idempotent via updateMany)
+        const updated = await prisma.order.updateMany({
+          where: { id: order.id, status: 'pending' },
+          data: { status: 'paid', paidAt: new Date() },
+        });
+        if (updated.count === 1) {
+          await addPoints({
+            userId: order.userId,
+            amount: order.points,
+            description: `充值${order.points}积分`,
+            relatedOrderId: order.orderNo,
+          });
+        }
+        status = 'paid';
+      }
+    } catch (e) {
+      // Silent — polling shouldn't break status endpoint
+      console.warn('[order-service] queryOrder failed', e);
+    }
+  }
+
+  // Re-read paidAt if we just transitioned (updated above)
+  const latest = (status === 'paid' && !order.paidAt)
+    ? await prisma.order.findUnique({ where: { id: order.id } })
+    : null;
 
   return {
     order_no: order.orderNo,
     status,
     amount: Number(order.amountYuan),
     points: order.points,
-    paid_at: order.paidAt?.toISOString() ?? null,
+    paid_at: (latest?.paidAt ?? order.paidAt)?.toISOString() ?? null,
     created_at: order.createdAt.toISOString(),
   };
 }

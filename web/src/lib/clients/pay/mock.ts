@@ -1,4 +1,4 @@
-import type { PayClient, CreateOrderInput, CreateOrderResult, VerifiedCallback } from './interface';
+import type { PayClient, CreateOrderInput, CreateOrderResult, VerifiedCallback, QueryOrderResult } from './interface';
 
 export class MockPayClient implements PayClient {
   async createNativeOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
@@ -20,5 +20,11 @@ export class MockPayClient implements PayClient {
   async verifyCallback(_headers: Record<string, string | undefined>, body: unknown): Promise<VerifiedCallback> {
     const b = (body ?? {}) as { order_no?: string; success?: boolean };
     return { orderNo: b.order_no ?? '', success: b.success ?? false };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async queryOrder(_orderNo: string): Promise<QueryOrderResult> {
+    // Mock mode uses auto-callback path; query is no-op
+    return { paid: false };
   }
 }
