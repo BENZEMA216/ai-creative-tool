@@ -6,11 +6,22 @@ import { getPayClient } from '@/lib/clients/pay';
 import { addPoints } from '@/lib/services/points-service';
 import type { PackageType } from '@prisma/client';
 
+export type PayMethod = 'native' | 'h5';
+
+export interface CreateOrderOptions {
+  method?: PayMethod;
+  clientIp?: string;
+}
+
 export interface CreateOrderResult {
   order_no: string;
   amount: number;
   points: number;
-  qr_code_url: string;
+  method: PayMethod;
+  /** For native: QR code URL (mock:// or weixin://) */
+  qr_code_url?: string;
+  /** For H5: redirect URL to WeChat mweb */
+  h5_url?: string;
   expire_at: string;
 }
 
@@ -24,9 +35,15 @@ export interface OrderStatusResult {
 }
 
 /**
- * 创建充值订单 + 调用 pay client 拿二维码 URL。
+ * 创建充值订单 + 调用 pay client 拿二维码 URL 或 H5 跳转链接。
  */
-export async function createOrder(userId: string, packageType: string): Promise<CreateOrderResult> {
+export async function createOrder(
+  userId: string,
+  packageType: string,
+  options: CreateOrderOptions = {},
+): Promise<CreateOrderResult> {
+  const method = options.method ?? 'native';
+
   if (!isValidPackageType(packageType)) {
     throw new AppError(ErrCode.InternalError, '无效套餐类型');
   }
@@ -47,32 +64,57 @@ export async function createOrder(userId: string, packageType: string): Promise<
 
   const notifyUrl = process.env.WECHAT_PAY_NOTIFY_URL ?? 'http://localhost:3000/api/order/wechat-callback';
 
-  let payResult;
-  try {
-    payResult = await getPayClient().createNativeOrder({
-      orderNo,
-      amountYuan: pkg.yuan,
-      description: `AI 智能创作 - ${packageType}套餐`,
-      notifyUrl,
-    });
-  } catch (e) {
-    const msg = e instanceof AppError ? e.message : (e instanceof Error ? e.message : '创建支付订单失败');
-    throw new AppError(ErrCode.WechatPayCreateFailed, msg);
+  let qrCodeUrl: string | undefined;
+  let h5Url: string | undefined;
+  let prepayId: string;
+
+  if (method === 'h5') {
+    if (!options.clientIp) {
+      throw new AppError(ErrCode.InternalError, 'H5 支付需要客户端 IP');
+    }
+    try {
+      const r = await getPayClient().createH5Order({
+        orderNo,
+        amountYuan: pkg.yuan,
+        description: `AI 智能创作 - ${packageType}套餐`,
+        notifyUrl,
+        clientIp: options.clientIp,
+      });
+      h5Url = r.h5Url;
+      prepayId = r.prepayId;
+    } catch (e) {
+      const msg = e instanceof AppError ? e.message : (e instanceof Error ? e.message : 'H5 支付下单失败');
+      throw new AppError(ErrCode.WechatPayCreateFailed, msg);
+    }
+  } else {
+    try {
+      const r = await getPayClient().createNativeOrder({
+        orderNo,
+        amountYuan: pkg.yuan,
+        description: `AI 智能创作 - ${packageType}套餐`,
+        notifyUrl,
+      });
+      qrCodeUrl = r.qrCodeUrl;
+      prepayId = r.prepayId;
+    } catch (e) {
+      const msg = e instanceof AppError ? e.message : (e instanceof Error ? e.message : '创建支付订单失败');
+      throw new AppError(ErrCode.WechatPayCreateFailed, msg);
+    }
   }
 
   await prisma.order.update({
     where: { id: order.id },
-    data: { wechatPrepayId: payResult.prepayId },
+    data: { wechatPrepayId: prepayId },
   });
-
-  const expireAt = new Date(order.createdAt.getTime() + ORDER_EXPIRY_MS);
 
   return {
     order_no: orderNo,
     amount: pkg.yuan,
     points: pkg.points,
-    qr_code_url: payResult.qrCodeUrl,
-    expire_at: expireAt.toISOString(),
+    method,
+    qr_code_url: qrCodeUrl,
+    h5_url: h5Url,
+    expire_at: new Date(order.createdAt.getTime() + ORDER_EXPIRY_MS).toISOString(),
   };
 }
 

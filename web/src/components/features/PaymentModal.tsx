@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 interface Order {
   order_no: string;
   amount: number;
-  qr_code_url: string;
+  qr_code_url?: string;
   expire_at: string;
 }
 
@@ -54,7 +54,7 @@ export function PaymentModal({ order, onClose, onPaid }: Props) {
           <>
             <h3 className="font-editorial text-xl text-white">微信扫码支付</h3>
             <div className="bg-white p-4 rounded-xl inline-block">
-              <QRCodeSVG value={order.qr_code_url} size={200} />
+              <QRCodeSVG value={order.qr_code_url ?? ''} size={200} />
             </div>
             <p className="text-sm text-white/70">订单号：{order.order_no}</p>
             <p className="text-2xl text-accent">¥ {order.amount}</p>

@@ -18,7 +18,7 @@ interface Order {
   order_no: string;
   amount: number;
   points: number;
-  qr_code_url: string;
+  qr_code_url?: string;
   expire_at: string;
 }
 
@@ -36,21 +36,62 @@ export function RechargeUI({ initialPoints }: { initialPoints: number }) {
     });
   }, []);
 
+  // Poll pending H5 order on return from WeChat
+  useEffect(() => {
+    const pending = sessionStorage.getItem('pending_order');
+    if (!pending) return;
+    let stopped = false;
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/order/status/${pending}`);
+        const json = await res.json();
+        if (json.code === 0 && json.data.status === 'paid') {
+          sessionStorage.removeItem('pending_order');
+          alert('支付成功，积分已到账');
+          router.refresh();
+          return;
+        }
+        if (json.code === 0 && (json.data.status === 'expired' || json.data.status === 'failed')) {
+          sessionStorage.removeItem('pending_order');
+          return;
+        }
+      } catch {}
+      if (!stopped) setTimeout(poll, 2000);
+    };
+    poll();
+    return () => { stopped = true; };
+  }, [router]);
+
   async function checkout() {
     setError(null);
     setBusy(true);
     try {
+      const isMobile = typeof navigator !== 'undefined' &&
+        /Android|iPhone|iPad|iPod|Mobile/.test(navigator.userAgent);
+
       const res = await fetch('/api/order/create', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ package_type: selected }),
+        body: JSON.stringify({
+          package_type: selected,
+          method: isMobile ? 'h5' : 'native',
+        }),
       });
       const json = await res.json();
       if (json.code !== 0) {
         setError(json.message);
         return;
       }
-      setOrder(json.data);
+
+      if (json.data.method === 'h5' && json.data.h5_url) {
+        // Store order_no for return-to-poll tracking
+        sessionStorage.setItem('pending_order', json.data.order_no);
+        // Redirect to WeChat H5 pay
+        window.location.href = json.data.h5_url;
+      } else {
+        // Native: existing modal flow
+        setOrder(json.data);
+      }
     } finally {
       setBusy(false);
     }
@@ -76,9 +117,9 @@ export function RechargeUI({ initialPoints }: { initialPoints: number }) {
       <Button fullWidth loading={busy} onClick={checkout}>
         微信支付
       </Button>
-      {order && (
+      {order && order.qr_code_url && (
         <PaymentModal
-          order={order}
+          order={{ ...order, qr_code_url: order.qr_code_url }}
           onClose={() => {
             setOrder(null);
             router.refresh();

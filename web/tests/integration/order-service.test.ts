@@ -231,3 +231,33 @@ describe('OrderService.getOrderStatus — WeChat polling', () => {
     expect(result.status).toBe('pending');
   });
 });
+
+describe('OrderService.createOrder — H5 method', () => {
+  it('uses createH5Order when method=h5', async () => {
+    const u = await makeUser();
+    const result = await createOrder(u.id, 'basic', {
+      method: 'h5',
+      clientIp: '127.0.0.1',
+    });
+    expect(result.method).toBe('h5');
+    expect(result.h5_url).toContain('mock://h5/');
+    expect(result.qr_code_url).toBeUndefined();
+    expect(result.order_no).toMatch(/^AC\d{14}[A-Z0-9]{4}$/);
+    expect(result.amount).toBe(19.9);
+  });
+
+  it('defaults to native when no method', async () => {
+    const u = await makeUser();
+    const result = await createOrder(u.id, 'basic', {});
+    expect(result.method).toBe('native');
+    expect(result.qr_code_url).toContain('mock://qr/');
+    expect(result.h5_url).toBeUndefined();
+  });
+
+  it('throws if h5 requested without clientIp', async () => {
+    const u = await makeUser();
+    await expect(
+      createOrder(u.id, 'basic', { method: 'h5' })
+    ).rejects.toMatchObject({ code: ErrCode.InternalError });
+  });
+});

@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { AppError, ErrCode } from '@/lib/domain/errors';
-import type { PayClient, CreateOrderInput, CreateOrderResult, VerifiedCallback, QueryOrderResult } from './interface';
+import type { PayClient, CreateOrderInput, CreateOrderResult, CreateH5OrderInput, CreateH5OrderResult, VerifiedCallback, QueryOrderResult } from './interface';
 
 interface WechatConfig {
   appid: string;
@@ -56,6 +56,16 @@ type WxPayInstance = {
     notify_url: string;
     amount: { total: number; currency: string };
   }): Promise<{ status: number; data?: { code_url?: string; prepay_id?: string }; error?: unknown }>;
+  transactions_h5(params: {
+    description: string;
+    out_trade_no: string;
+    notify_url: string;
+    amount: { total: number; currency: string };
+    scene_info: {
+      payer_client_ip: string;
+      h5_info: { type: 'Wap' | 'iOS' | 'Android'; app_name?: string; app_url?: string };
+    };
+  }): Promise<{ status: number; data?: { h5_url?: string; prepay_id?: string }; error?: unknown }>;
   verifySign(params: {
     timestamp: string | number;
     nonce: string;
@@ -129,6 +139,41 @@ export class WechatPayClient implements PayClient {
       if (e instanceof AppError) throw e;
       const msg = e instanceof Error ? e.message : String(e);
       throw new AppError(ErrCode.WechatPayCreateFailed, `微信支付下单失败: ${msg}`);
+    }
+  }
+
+  async createH5Order(input: CreateH5OrderInput): Promise<CreateH5OrderResult> {
+    const amountInFen = Math.round(input.amountYuan * 100);
+    try {
+      const result = await this.pay.transactions_h5({
+        description: input.description,
+        out_trade_no: input.orderNo,
+        notify_url: input.notifyUrl,
+        amount: { total: amountInFen, currency: 'CNY' },
+        scene_info: {
+          payer_client_ip: input.clientIp,
+          h5_info: {
+            type: input.h5Type ?? 'Wap',
+            app_name: input.appName ?? 'AI 智能创作',
+            app_url: input.appUrl ?? 'https://xiongdoudou.com',
+          },
+        },
+      });
+      const h5Url = result.data?.h5_url;
+      if (!h5Url) {
+        throw new AppError(
+          ErrCode.WechatPayCreateFailed,
+          `微信返回无 h5_url: status=${result.status} error=${JSON.stringify(result.error ?? result).slice(0, 200)}`
+        );
+      }
+      return {
+        h5Url,
+        prepayId: result.data?.prepay_id ?? input.orderNo,
+      };
+    } catch (e) {
+      if (e instanceof AppError) throw e;
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new AppError(ErrCode.WechatPayCreateFailed, `H5 支付下单失败: ${msg}`);
     }
   }
 
